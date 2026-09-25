@@ -108,26 +108,11 @@ typedef struct {
  */
 FKResult fivebar_fk(float alpha, float beta);
 
-/**
- * @brief  雅可比矩阵  B' = J · [α', β']^T
- * @return true=可逆, false=奇异 (sinΔθ≈0)
- */
-bool fivebar_jacobian(float alpha, float beta,
-                      float th1, float th2,
-                      Jacobian *J);
+bool fivebar_jacobian(float alpha, float beta, float th1, float th2, Jacobian *J);
 
-/**
- * @brief  力控逆解  τ = J^T · F
- */
-void fivebar_force(const Jacobian *J,
-                   float Fx, float Fy,
-                   float *tau_a, float *tau_b);
+void fivebar_force(const Jacobian *J, float Fx, float Fy, float *tau_a, float *tau_b);
 
-/**
- * @brief  一站式求解: 正解 → 雅可比 → 力矩
- */
-FKSolve fivebar_solve(float alpha, float beta,
-                      float Fx, float Fy);
+FKSolve fivebar_solve(float alpha, float beta, float Fx, float Fy);
 
 #ifdef __cplusplus
 }

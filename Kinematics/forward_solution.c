@@ -281,11 +281,11 @@ FKResult fivebar_fk(float alpha, float beta) {
  *
  *  返回 false → 奇异 (sinΔθ≈0, 两被动杆平行, det(J)=0)
  * ==================================================================== */
-bool fivebar_jacobian(float alpha, float beta,
-                      float th1, float th2,
-                      Jacobian *J) {
+bool fivebar_jacobian(float alpha, float beta, float th1, float th2, Jacobian *J)
+{
     float sd = fsin(wrap(th2 - th1));
-    if (fabsf(sd) < EPS) {
+    if (fabsf(sd) < EPS)
+	{
         J->j11 = J->j12 = J->j21 = J->j22 = 0.0f;
         return false;
     }
@@ -312,9 +312,8 @@ bool fivebar_jacobian(float alpha, float beta,
  *  τ[0] = τα = j11·Fx + j21·Fy   (左驱动关节力矩)
  *  τ[1] = τβ = j12·Fx + j22·Fy   (右驱动关节力矩)
  * ==================================================================== */
-void fivebar_force(const Jacobian *J,
-                   float Fx, float Fy,
-                   float *tau_a, float *tau_b) {
+void fivebar_force(const Jacobian *J, float Fx, float Fy, float *tau_a, float *tau_b)
+{
     *tau_a = J->j11 * Fx + J->j21 * Fy;
     *tau_b = J->j12 * Fx + J->j22 * Fy;
 }
@@ -322,15 +321,16 @@ void fivebar_force(const Jacobian *J,
 /* ====================================================================
  *  fivebar_solve — 一站式求解: 正解 → 雅可比 → 力矩
  * ==================================================================== */
-FKSolve fivebar_solve(float alpha, float beta,
-                      float Fx, float Fy) {
+FKSolve fivebar_solve(float alpha, float beta, float Fx, float Fy)
+{
     FKSolve s = {0};
     s.fk = fivebar_fk(alpha, beta);
 
-    if (s.fk.status == FK_OK) {
-        s.jac_ok = fivebar_jacobian(alpha, beta,
-                                    s.fk.th1, s.fk.th2, &s.J);
-        if (s.jac_ok) {
+    if (s.fk.status == FK_OK)
+	{
+        s.jac_ok = fivebar_jacobian(alpha, beta, s.fk.th1, s.fk.th2, &s.J);
+        if (s.jac_ok)
+		{
             fivebar_force(&s.J, Fx, Fy, &s.tau_a, &s.tau_b);
         }
     }

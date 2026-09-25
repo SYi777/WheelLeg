@@ -1214,6 +1214,16 @@
               <FileType>4</FileType>
               <FilePath>..\Algorithm\arm_cortexM7lfdp_math.lib</FilePath>
             </File>
+            <File>
+              <FileName>VMC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Algorithm\VMC.c</FilePath>
+            </File>
+            <File>
+              <FileName>VMC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Algorithm\VMC.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

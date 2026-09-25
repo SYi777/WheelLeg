@@ -46,6 +46,7 @@
 "wheelleg\controller.o"
 "wheelleg\user_lib.o"
 "..\Algorithm\arm_cortexM7lfdp_math.lib"
+"wheelleg\vmc.o"
 "wheelleg\ins_task.o"
 "wheelleg\leg_tasks.o"
 "wheelleg\dwt.o"
