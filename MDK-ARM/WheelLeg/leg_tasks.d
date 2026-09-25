@@ -72,3 +72,11 @@ wheelleg\leg_tasks.o: ../Algorithm/pid.h
 wheelleg\leg_tasks.o: ../Kinematics/forward_solution.h
 wheelleg\leg_tasks.o: D:\Applications\Keil\ARM\ARMCC\Bin\..\include\stdbool.h
 wheelleg\leg_tasks.o: ../Kinematics/inverse_solution.h
+wheelleg\leg_tasks.o: ../Applications/Remote_control.h
+wheelleg\leg_tasks.o: ../Bsp/bsp_RC.h
+wheelleg\leg_tasks.o: ../Algorithm/VMC.h
+wheelleg\leg_tasks.o: ../Tasks/INS_task.h
+wheelleg\leg_tasks.o: ../Devices/BMI088driver.h
+wheelleg\leg_tasks.o: ../Algorithm/QuaternionEKF.h
+wheelleg\leg_tasks.o: ../Algorithm/kalman_filter.h
+wheelleg\leg_tasks.o: D:\Applications\Keil\ARM\ARMCC\Bin\..\include\stdlib.h

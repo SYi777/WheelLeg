@@ -22,7 +22,7 @@ vmc_t vmc_right_s;
 
 void VMC_init(vmc_t *vmc)
 {
-    vmc->L0_set = 250.0f;
+    vmc->L0_set = 220.0f;
     vmc->first_flag = 1;
     vmc->F0 = 0.0f;
     vmc->Tp = 0.0f;
@@ -35,6 +35,7 @@ void VMC_StateUpdate(vmc_t *vmc, float alpha_enc, float beta_enc, float dt)
 	vmc->fk_s.fk = fivebar_fk(alpha_enc, beta_enc);
 	if(vmc->fk_s.fk.status != FK_OK )
 	{
+		vmc->first_flag = 1;
 		return;
 	}
 	
@@ -67,7 +68,7 @@ void VMC_ForceCalc(vmc_t *vmc, float alpha_enc, float beta_enc, float Tp)
 	}
 	
 	float F_spring = VMC_KP * (vmc->L0_set - vmc->L0) + VMC_KD * (0.0F - vmc->d_L0);
-	float F_gravity = MASS_HALF_G / cosf(vmc->alpha);
+	float F_gravity = 0;//MASS_HALF_G / cosf(vmc->alpha);
 	vmc->F0 = F_spring + F_gravity;
 	if(vmc->F0 > VMC_F0_MAX)
 	{

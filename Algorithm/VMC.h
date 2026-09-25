@@ -6,9 +6,9 @@
 #include "forward_solution.h"
 
 #define MASS_HALF_G   98.0f
-#define VMC_KP         3.0f
+#define VMC_KP         5.0f
 #define VMC_KD         0.1f
-#define VMC_F0_MAX   150.0f
+#define VMC_F0_MAX   100.0f
 #define TORQUE_LIMIT    5.0f
 
 typedef struct
