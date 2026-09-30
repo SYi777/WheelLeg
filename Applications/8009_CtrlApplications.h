@@ -38,9 +38,9 @@ void DM_8009Motor_Init(DM_Motor *g_motor, uint8_t can_id);
 void Set_LeftOneTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff);
 //设置左后关节，关节id为2，电机位于左前方
 void Set_LeftTwoTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff);
-//设置右前
+//设置右前关节，关节id为3，电机位于右前方
 void Set_RightOneTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff);
-//设置右后
+//设置右后关节，关节id为4，电机位于右后方
 void Set_RightTwoTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff);
 
 // 位置环

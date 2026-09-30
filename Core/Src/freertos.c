@@ -119,7 +119,7 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
   INSTaskHandle = osThreadNew(INS_task , NULL, &INSTask_attributes);
   LLegTaskHandle = osThreadNew(LLeg_task, NULL, &LLegTask_attributes);
-  RLegTaskHandle = osThreadNew(RLeg_task, NULL, &LLegTask_attributes);
+  RLegTaskHandle = osThreadNew(RLeg_task, NULL, &RLegTask_attributes);
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */

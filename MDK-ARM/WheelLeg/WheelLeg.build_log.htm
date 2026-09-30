@@ -28,13 +28,13 @@ Project File Date:  09/26/2026
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'D:\Applications\Keil\ARM\ARMCC\Bin'
 Build target 'WheelLeg'
 compiling Leg_Tasks.c...
-..\Tasks\Leg_Tasks.c(83): warning:  #223-D: function "osDelay" declared implicitly
+..\Tasks\Leg_Tasks.c(84): warning:  #223-D: function "osDelay" declared implicitly
           osDelay(1);                   // 1ms 控制周期 (和 dt=0.001f 对齐)
-..\Tasks\Leg_Tasks.c(94): warning:  #223-D: function "osDelay" declared implicitly
-  		osDelay(1000);
+..\Tasks\Leg_Tasks.c(129): warning:  #223-D: function "osDelay" declared implicitly
+          osDelay(1);
 ..\Tasks\Leg_Tasks.c: 2 warnings, 0 errors
 linking...
-Program Size: Code=71288 RO-data=3536 RW-data=1348 ZI-data=46180  
+Program Size: Code=71832 RO-data=3536 RW-data=1356 ZI-data=46252  
 FromELF: creating hex file...
 "WheelLeg\WheelLeg.axf" - 0 Error(s), 2 Warning(s).
 

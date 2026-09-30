@@ -98,10 +98,3 @@ void VMC_ForceCalc(vmc_t *vmc, float alpha_enc, float beta_enc, float Tp)
 		vmc->fk_s.tau_a = vmc->fk_s.tau_b = 0.0f;
 	}
 }
-
-void vmc_calc_left(vmc_t *vmc, INS_t *ins, float dt)
-{
-	
-}
-
-
