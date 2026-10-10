@@ -88,7 +88,7 @@ I (../Devices/BMI088driver.h)(0x6A291284)
 I (../Algorithm/QuaternionEKF.h)(0x6A27ACAD)
 I (../Algorithm/kalman_filter.h)(0x6A293FD6)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
-I (../Applications/DM_motor.h)(0x6A267E7A)
+I (../Applications/DM_motor.h)(0x6ACA81EC)
 I (../Applications/8009_CtrlApplications.h)(0x6ABCB300)
 I (../Devices/BMI088Middleware.h)(0x6A27CD75)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdio.h)(0x60252374)
@@ -213,9 +213,9 @@ I (../Drivers/CMSIS/DSP/Include/dsp/transform_functions.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/dsp/filtering_functions.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/dsp/quaternion_math_functions.h)(0x6A2A6351)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
-I (../Tasks/Leg_Tasks.h)(0x6A2B1881)
+I (../Tasks/Leg_Tasks.h)(0x6ACA4B8E)
 I (../Applications/8009_CtrlApplications.h)(0x6ABCB300)
-I (../Applications/DM_motor.h)(0x6A267E7A)
+I (../Applications/DM_motor.h)(0x6ACA81EC)
 I (../Core/Inc/fdcan.h)(0x6A220842)
 I (../Applications/struct_typedef.h)(0x6A266530)
 I (../Algorithm/pid.h)(0x6A266743)
@@ -472,7 +472,7 @@ I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h)(0x6A2A6352)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h)(0x6A2A6352)
 I (../Core/Inc/stm32h7xx_it.h)(0x6AB6ABAE)
 I (../Applications/8009_CtrlApplications.h)(0x6ABCB300)
-I (../Applications/DM_motor.h)(0x6A267E7A)
+I (../Applications/DM_motor.h)(0x6ACA81EC)
 I (../Core/Inc/fdcan.h)(0x6A220842)
 I (D:\Applications\Keil\ARM\ARMCC\include\string.h)(0x6025237E)
 F (../Core/Src/stm32h7xx_hal_msp.c)(0x6A27B0C3)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\stm32h7xx_hal_msp.o --omf_browse wheelleg\stm32h7xx_hal_msp.crf --depend wheelleg\stm32h7xx_hal_msp.d)
@@ -1516,8 +1516,8 @@ I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim.h)(0x6A2A6352)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h)(0x6A2A6352)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h)(0x6A2A6352)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h)(0x6A2A6352)
-F (..\Applications\DM_motor.c)(0x6ABD1E23)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\dm_motor.o --omf_browse wheelleg\dm_motor.crf --depend wheelleg\dm_motor.d)
-I (..\Applications\DM_motor.h)(0x6A267E7A)
+F (..\Applications\DM_motor.c)(0x6ACA82ED)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\dm_motor.o --omf_browse wheelleg\dm_motor.crf --depend wheelleg\dm_motor.d)
+I (..\Applications\DM_motor.h)(0x6ACA81EC)
 I (../Core/Inc/fdcan.h)(0x6A220842)
 I (../Core/Inc/main.h)(0x6A27DC94)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h)(0x6A2A6352)
@@ -1561,10 +1561,21 @@ I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h)(0x6A2A6352)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h)(0x6A2A6352)
 I (D:\Applications\Keil\ARM\ARMCC\include\string.h)(0x6025237E)
 I (..\Applications\8009_CtrlApplications.h)(0x6ABCB300)
-F (..\Applications\DM_motor.h)(0x6A267E7A)()
+I (..\Applications\3508_CtrlApplications.h)(0x6AC9DBE7)
+I (..\Applications\struct_typedef.h)(0x6A266530)
+I (../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h)(0x6A2A6362)
+I (../Core/Inc/FreeRTOSConfig.h)(0x6A27B0C0)
+I (../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h)(0x6A2A6362)
+I (../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h)(0x6A2A6362)
+I (../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h)(0x6A2A6362)
+I (../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/portmacro.h)(0x6A2A6362)
+I (../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h)(0x6A2A6362)
+I (../Middlewares/Third_Party/FreeRTOS/Source/include/task.h)(0x6A2A6362)
+I (../Middlewares/Third_Party/FreeRTOS/Source/include/list.h)(0x6A2A6362)
+F (..\Applications\DM_motor.h)(0x6ACA81EC)()
 F (..\Applications\8009_CtrlApplications.c)(0x6A267AA0)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\8009_ctrlapplications.o --omf_browse wheelleg\8009_ctrlapplications.crf --depend wheelleg\8009_ctrlapplications.d)
 I (..\Applications\8009_CtrlApplications.h)(0x6ABCB300)
-I (..\Applications\DM_motor.h)(0x6A267E7A)
+I (..\Applications\DM_motor.h)(0x6ACA81EC)
 I (../Core/Inc/fdcan.h)(0x6A220842)
 I (../Core/Inc/main.h)(0x6A27DC94)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h)(0x6A2A6352)
@@ -1653,11 +1664,57 @@ I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h)(0x6A2A6352)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h)(0x6A2A6352)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h)(0x6A2A6352)
 F (..\Applications\Remote_control.h)(0x6A27C59C)()
-F (..\Kinematics\forward_solution.c)(0x6AB6A2FA)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\forward_solution.o --omf_browse wheelleg\forward_solution.crf --depend wheelleg\forward_solution.d)
+F (..\Applications\3508_CtrlApplications.c)(0x6ACA7BB0)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\3508_ctrlapplications.o --omf_browse wheelleg\3508_ctrlapplications.crf --depend wheelleg\3508_ctrlapplications.d)
+I (..\Applications\3508_CtrlApplications.h)(0x6AC9DBE7)
+I (..\Applications\struct_typedef.h)(0x6A266530)
+I (../Core/Inc/fdcan.h)(0x6A220842)
+I (../Core/Inc/main.h)(0x6A27DC94)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h)(0x6A2A6352)
+I (../Core/Inc/stm32h7xx_hal_conf.h)(0x6A27CC82)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_def.h)(0x6A2A6352)
+I (../Drivers/CMSIS/Device/ST/STM32H7xx/Include/stm32h7xx.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Device/ST/STM32H7xx/Include/stm32h723xx.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/core_cm7.h)(0x6A2A6351)
+I (D:\Applications\Keil\ARM\ARMCC\include\stdint.h)(0x6025237E)
+I (../Drivers/CMSIS/Include/cmsis_version.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/cmsis_armcc.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/mpu_armv7.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/cachel1_armv7.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Device/ST/STM32H7xx/Include/system_stm32h7xx.h)(0x6A2A6351)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h)(0x6A2A6352)
+I (D:\Applications\Keil\ARM\ARMCC\include\stddef.h)(0x6025237E)
+I (D:\Applications\Keil\ARM\ARMCC\include\math.h)(0x60252378)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_gpio.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_gpio_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_dma.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_dma_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_mdma.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_exti.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_cortex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_fdcan.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_flash.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_flash_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_hsem.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_i2c.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_i2c_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pwr.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pwr_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_spi.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_spi_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h)(0x6A2A6352)
+I (D:\Applications\Keil\ARM\ARMCC\include\string.h)(0x6025237E)
+F (..\Applications\3508_CtrlApplications.h)(0x6AC9DBE7)()
+F (..\Kinematics\forward_solution.c)(0x6AC7AB34)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\forward_solution.o --omf_browse wheelleg\forward_solution.crf --depend wheelleg\forward_solution.d)
 I (D:\Applications\Keil\ARM\ARMCC\include\math.h)(0x60252378)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdbool.h)(0x6025237C)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdint.h)(0x6025237E)
-I (..\Kinematics\forward_solution.h)(0x6AB6A2F8)
+I (..\Kinematics\forward_solution.h)(0x6ACA7ECD)
 I (../Drivers/CMSIS/DSP/Include/arm_math.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/arm_math_types.h)(0x6A2A6351)
 I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x6A2A6351)
@@ -1683,13 +1740,13 @@ I (../Drivers/CMSIS/DSP/Include/dsp/svm_defines.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/dsp/transform_functions.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/dsp/filtering_functions.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/dsp/quaternion_math_functions.h)(0x6A2A6351)
-F (..\Kinematics\forward_solution.h)(0x6AB6A2F8)()
+F (..\Kinematics\forward_solution.h)(0x6ACA7ECD)()
 F (..\Kinematics\inverse_solution.c)(0x6A329C7B)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\inverse_solution.o --omf_browse wheelleg\inverse_solution.crf --depend wheelleg\inverse_solution.d)
 I (D:\Applications\Keil\ARM\ARMCC\include\math.h)(0x60252378)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdbool.h)(0x6025237C)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdint.h)(0x6025237E)
 I (..\Kinematics\inverse_solution.h)(0x6A329AC8)
-I (..\Kinematics\forward_solution.h)(0x6AB6A2F8)
+I (..\Kinematics\forward_solution.h)(0x6ACA7ECD)
 I (../Drivers/CMSIS/DSP/Include/arm_math.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/arm_math_types.h)(0x6A2A6351)
 I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x6A2A6351)
@@ -1944,8 +2001,8 @@ I (../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2/cmsis_os.h)(0x6A2A63
 I (../Drivers/CMSIS/RTOS2/Include/cmsis_os2.h)(0x6A2A6351)
 F (..\Algorithm\user_lib.h)(0x6A27AF94)()
 F (..\Algorithm\arm_cortexM7lfdp_math.lib)(0x6A27BFEE)()
-F (..\Algorithm\VMC.c)(0x6ABCB445)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\vmc.o --omf_browse wheelleg\vmc.crf --depend wheelleg\vmc.d)
-I (..\Algorithm\VMC.h)(0x6AB6B68D)
+F (..\Algorithm\VMC.c)(0x6ACA9AEC)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\vmc.o --omf_browse wheelleg\vmc.crf --depend wheelleg\vmc.d)
+I (..\Algorithm\VMC.h)(0x6ACAA29B)
 I (../Core/Inc/main.h)(0x6A27DC94)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h)(0x6A2A6352)
 I (../Core/Inc/stm32h7xx_hal_conf.h)(0x6A27CC82)
@@ -2014,9 +2071,83 @@ I (../Drivers/CMSIS/DSP/Include/dsp/transform_functions.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/dsp/filtering_functions.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/dsp/quaternion_math_functions.h)(0x6A2A6351)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
-I (../Kinematics/forward_solution.h)(0x6AB6A2F8)
+I (../Kinematics/forward_solution.h)(0x6ACA7ECD)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdbool.h)(0x6025237C)
-F (..\Algorithm\VMC.h)(0x6AB6B68D)()
+F (..\Algorithm\VMC.h)(0x6ACAA29B)()
+F (..\Algorithm\balance.c)(0x6ACA9325)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\balance.o --omf_browse wheelleg\balance.crf --depend wheelleg\balance.d)
+I (..\Algorithm\balance.h)(0x6ACAA1C8)
+I (../Core/Inc/main.h)(0x6A27DC94)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h)(0x6A2A6352)
+I (../Core/Inc/stm32h7xx_hal_conf.h)(0x6A27CC82)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_def.h)(0x6A2A6352)
+I (../Drivers/CMSIS/Device/ST/STM32H7xx/Include/stm32h7xx.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Device/ST/STM32H7xx/Include/stm32h723xx.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/core_cm7.h)(0x6A2A6351)
+I (D:\Applications\Keil\ARM\ARMCC\include\stdint.h)(0x6025237E)
+I (../Drivers/CMSIS/Include/cmsis_version.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/cmsis_compiler.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/cmsis_armcc.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/mpu_armv7.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Include/cachel1_armv7.h)(0x6A2A6351)
+I (../Drivers/CMSIS/Device/ST/STM32H7xx/Include/system_stm32h7xx.h)(0x6A2A6351)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy/stm32_hal_legacy.h)(0x6A2A6352)
+I (D:\Applications\Keil\ARM\ARMCC\include\stddef.h)(0x6025237E)
+I (D:\Applications\Keil\ARM\ARMCC\include\math.h)(0x60252378)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_rcc_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_gpio.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_gpio_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_dma.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_dma_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_mdma.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_exti.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_cortex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_fdcan.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_flash.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_flash_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_hsem.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_i2c.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_i2c_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pwr.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_pwr_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_spi.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_spi_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_tim_ex.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h)(0x6A2A6352)
+I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h)(0x6A2A6352)
+I (../Tasks/INS_task.h)(0x6A27C816)
+I (../Devices/BMI088driver.h)(0x6A291284)
+I (../Algorithm/QuaternionEKF.h)(0x6A27ACAD)
+I (../Algorithm/kalman_filter.h)(0x6A293FD6)
+I (../Drivers/CMSIS/DSP/Include/arm_math.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/arm_math_types.h)(0x6A2A6351)
+I (D:\Applications\Keil\ARM\ARMCC\include\string.h)(0x6025237E)
+I (D:\Applications\Keil\ARM\ARMCC\include\float.h)(0x6025237E)
+I (D:\Applications\Keil\ARM\ARMCC\include\limits.h)(0x60252376)
+I (../Drivers/CMSIS/DSP/Include/arm_math_memory.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/none.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/utils.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/basic_math_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/interpolation_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/bayes_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/statistics_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/fast_math_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/matrix_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/complex_math_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/controller_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/support_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/distance_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/svm_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/svm_defines.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/transform_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/filtering_functions.h)(0x6A2A6351)
+I (../Drivers/CMSIS/DSP/Include/dsp/quaternion_math_functions.h)(0x6A2A6351)
+I (D:\Applications\Keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
+I (..\Algorithm\VMC.h)(0x6ACAA29B)
+I (../Kinematics/forward_solution.h)(0x6ACA7ECD)
+I (D:\Applications\Keil\ARM\ARMCC\include\stdbool.h)(0x6025237C)
+F (..\Algorithm\balance.h)(0x6ACAA1C8)()
 F (..\Tasks\INS_task.c)(0x6A294150)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\ins_task.o --omf_browse wheelleg\ins_task.crf --depend wheelleg\ins_task.d)
 I (..\Tasks\INS_task.h)(0x6A27C816)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdint.h)(0x6025237E)
@@ -2095,10 +2226,10 @@ I (../Drivers/CMSIS/RTOS2/Include/cmsis_os2.h)(0x6A2A6351)
 I (../Bsp/bsp_PWM.h)(0x6A27CCFD)
 I (../Core/Inc/tim.h)(0x6A27CC80)
 F (..\Tasks\INS_task.h)(0x6A27C816)()
-F (..\Tasks\Leg_Tasks.c)(0x6ABD1F5C)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\leg_tasks.o --omf_browse wheelleg\leg_tasks.crf --depend wheelleg\leg_tasks.d)
-I (..\Tasks\Leg_Tasks.h)(0x6A2B1881)
+F (..\Tasks\Leg_Tasks.c)(0x6ACA9AEC)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\leg_tasks.o --omf_browse wheelleg\leg_tasks.crf --depend wheelleg\leg_tasks.d)
+I (..\Tasks\Leg_Tasks.h)(0x6ACA4B8E)
 I (../Applications/8009_CtrlApplications.h)(0x6ABCB300)
-I (../Applications/DM_motor.h)(0x6A267E7A)
+I (../Applications/DM_motor.h)(0x6ACA81EC)
 I (../Core/Inc/fdcan.h)(0x6A220842)
 I (../Core/Inc/main.h)(0x6A27DC94)
 I (../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal.h)(0x6A2A6352)
@@ -2165,18 +2296,20 @@ I (../Drivers/CMSIS/DSP/Include/dsp/filtering_functions.h)(0x6A2A6351)
 I (../Drivers/CMSIS/DSP/Include/dsp/quaternion_math_functions.h)(0x6A2A6351)
 I (../Applications/struct_typedef.h)(0x6A266530)
 I (../Algorithm/pid.h)(0x6A266743)
-I (../Kinematics/forward_solution.h)(0x6AB6A2F8)
-I (D:\Applications\Keil\ARM\ARMCC\include\stdbool.h)(0x6025237C)
-I (../Kinematics/inverse_solution.h)(0x6A329AC8)
 I (../Applications/Remote_control.h)(0x6A27C59C)
 I (../Bsp/bsp_RC.h)(0x6A27C59C)
-I (../Algorithm/VMC.h)(0x6AB6B68D)
+I (../Algorithm/VMC.h)(0x6ACAA29B)
 I (../Tasks/INS_task.h)(0x6A27C816)
 I (../Devices/BMI088driver.h)(0x6A291284)
 I (../Algorithm/QuaternionEKF.h)(0x6A27ACAD)
 I (../Algorithm/kalman_filter.h)(0x6A293FD6)
 I (D:\Applications\Keil\ARM\ARMCC\include\stdlib.h)(0x60252374)
-F (..\Tasks\Leg_Tasks.h)(0x6A2B1881)()
+I (../Kinematics/forward_solution.h)(0x6ACA7ECD)
+I (D:\Applications\Keil\ARM\ARMCC\include\stdbool.h)(0x6025237C)
+I (../Applications/3508_CtrlApplications.h)(0x6AC9DBE7)
+I (../Algorithm/balance.h)(0x6ACAA1C8)
+I (../Drivers/CMSIS/RTOS2/Include/cmsis_os2.h)(0x6A2A6351)
+F (..\Tasks\Leg_Tasks.h)(0x6ACA4B8E)()
 F (..\Timer\dwt.c)(0x6A27B316)(--c99 --gnu -c --cpu Cortex-M7.fp.dp -g -O0 --apcs=interwork --split_sections -I ../Core/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc -I ../Drivers/STM32H7xx_HAL_Driver/Inc/Legacy -I ../Drivers/CMSIS/Device/ST/STM32H7xx/Include -I ../Drivers/CMSIS/Include -I ../Applications -I ../Kinematics -I ../Drivers/CMSIS/DSP/Include -I ../Algorithm -I ../Tasks -I ../Timer -I ../Bsp -I ../Middlewares/Third_Party/FreeRTOS/Source/include -I ../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2 -I ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F -I ../Drivers/CMSIS/RTOS2/Include -I ../Devices -I ../Drivers/CMSIS/DSP/Source --diag_suppress=1041-I.\RTE\_WheelLeg-ID:\Applications\Arm\Packs\ARM\CMSIS\6.3.0\CMSIS\Core\Include-D__UVISION_VERSION="543" -DSTM32H723xx -D_RTE_ -DUSE_PWR_LDO_SUPPLY -DUSE_HAL_DRIVER -DSTM32H723xx -DARM_MATH_CM7-o wheelleg\dwt.o --omf_browse wheelleg\dwt.crf --depend wheelleg\dwt.d)
 I (..\Timer\dwt.h)(0x6A27B316)
 I (../Core/Inc/main.h)(0x6A27DC94)

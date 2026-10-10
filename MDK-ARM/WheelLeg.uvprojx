@@ -1129,6 +1129,16 @@
               <FileType>5</FileType>
               <FilePath>..\Applications\Remote_control.h</FilePath>
             </File>
+            <File>
+              <FileName>3508_CtrlApplications.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Applications\3508_CtrlApplications.c</FilePath>
+            </File>
+            <File>
+              <FileName>3508_CtrlApplications.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Applications\3508_CtrlApplications.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1223,6 +1233,16 @@
               <FileName>VMC.h</FileName>
               <FileType>5</FileType>
               <FilePath>..\Algorithm\VMC.h</FilePath>
+            </File>
+            <File>
+              <FileName>balance.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Algorithm\balance.c</FilePath>
+            </File>
+            <File>
+              <FileName>balance.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Algorithm\balance.h</FilePath>
             </File>
           </Files>
         </Group>

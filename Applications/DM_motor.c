@@ -7,6 +7,9 @@
 **/
 #include "DM_motor.h"
 #include "8009_CtrlApplications.h"
+#include "3508_CtrlApplications.h"
+#include "FreeRTOS.h"
+#include "task.h"
 
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
@@ -48,6 +51,14 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
                     DM8009_Ctrl[3].rx_cnt++;
                     break;
                     
+				case CAN_3508_ML_ID:// 0x201 左轮
+					get_motor_measure(&motor_measure_L, RxData);
+                    break;
+				
+                case CAN_3508_MR_ID:// 0x202 右轮
+                    get_motor_measure(&motor_measure_R, RxData);
+                    break;
+				
                 default:
                     break;
             }
@@ -127,7 +138,10 @@ HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
     tx_header.FDFormat            = FDCAN_CLASSIC_CAN;
     tx_header.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
     tx_header.MessageMarker       = 0;
-	HAL_StatusTypeDef st = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan,&tx_header,data);
+	HAL_StatusTypeDef st;
+	taskENTER_CRITICAL();
+	st = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan,&tx_header,data);
+	taskEXIT_CRITICAL();
 	if(st == HAL_OK)
 	{
 		m->tx_cnt++;
@@ -149,13 +163,19 @@ static HAL_StatusTypeDef DM_SendSysCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m,
     tx_header.FDFormat            = FDCAN_CLASSIC_CAN;
     tx_header.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
     tx_header.MessageMarker       = 0;
-    return HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &tx_header, data);
+    HAL_StatusTypeDef st;
+    taskENTER_CRITICAL();
+    st = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &tx_header, data);
+    taskEXIT_CRITICAL();
+    return st;
 }
 //使能电机
-void DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
+HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 {
     uint8_t data[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
-    DM_SendSysCmd(hfdcan, m, data);
+    HAL_StatusTypeDef st = DM_SendSysCmd(hfdcan, m, data);
+    m->last_tx_status = st;
+    return st;
 }
 //失能电机
 void DM_Disable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)

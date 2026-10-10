@@ -1,95 +1,96 @@
 #include "Leg_Tasks.h"
-#include "forward_solution.h"
-#include "inverse_solution.h"
 #include "Remote_control.h"
 #include "VMC.h"
-
-static LeftLegCtrl_s LeftCtrl[2];
-fp32 left_leg_1_pid[3]={PID_P,PID_I,PID_D};
-fp32 left_leg_2_pid[3]={PID_P,PID_I,PID_D};
-FKResult s1,s2;
-IKResult r1,r2;
+#include "3508_CtrlApplications.h"
+#include "balance.h"
+#include "INS_task.h"
+#include "cmsis_os2.h"
 
 extern vmc_t vmc_left_s;
 extern vmc_t vmc_right_s;
 
+balance_t bal_left;
+balance_t bal_right;
+
+float Roll_Loop(float roll_set, float roll, float roll_gyro);
+float AntiSplit_Loop(float theta_rel_body_L_rad, float theta_rel_body_R_rad);
+
+/* 安全保护: 电机断联或正解失败 -> 禁止输出 */
+static int leg_safety_ok(const DM_Motor *m0, const DM_Motor *m1, const vmc_t *vmc)
+{
+    uint32_t now = HAL_GetTick();
+    if (m0->online == 0 || m1->online == 0) return 0;
+    if (now - m0->last_fb_tick > DM_COMM_TIMEOUT_MS) return 0;
+    if (now - m1->last_fb_tick > DM_COMM_TIMEOUT_MS) return 0;
+    if (vmc->fk_s.fk.status != FK_OK) return 0;
+    return 1;
+}
+
 void LLeg_task(void *argument)
 {
-	DM_8009Motor_Init(&DM8009_Ctrl[0],LeftFrontCAN_ID);
-	DM_CtrlStop(&DM8009_Ctrl[0]);
-	DM_8009Motor_Init(&DM8009_Ctrl[1],LeftBehindCAN_ID);
-	DM_CtrlStop(&DM8009_Ctrl[1]);
-	
-	DM_Enable(&hfdcan1, &DM8009_Ctrl[0]);
-	DM_Enable(&hfdcan1, &DM8009_Ctrl[1]);
-	
-	PID_init(&LeftCtrl[0].angle_pid,PID_POSITION,left_leg_1_pid,PID_MAX_OUT,PID_MAX_IOUT);
-	PID_init(&LeftCtrl[1].angle_pid,PID_POSITION,left_leg_2_pid,PID_MAX_OUT,PID_MAX_IOUT);
-	
-	VMC_init(&vmc_left_s);            // L0_set=250、first_flag=1、状态置非法
-	
-	while(1)
-	{
-//		Set_LeftOneTorqueMIT(&hfdcan1, &DM8009_Ctrl[0], remote_ctrl.rc.ch[0]/100);
-//		Set_LeftTwoTorqueMIT(&hfdcan1, &DM8009_Ctrl[1], remote_ctrl.rc.ch[2]/100);
-		
-//		for(int i = 0;i<2;i++)
-//		{
-//			DM_SendCmd(&hfdcan1, &DM8009_Ctrl[i]);
-//		}
-		
-		/* 1. 读编码器 */
-        float alpha_enc = DM8009_Ctrl[0].fb.processed_pos;   // 左前电机
-        float beta_enc  = DM8009_Ctrl[1].fb.processed_pos;   // 左后电机
+    while (remote_ctrl.rc.ch[0] < 500);   /* 遥控使能闸 */
 
-        /* 2. VMC 状态段 + 力段 (Tp 二期接平衡环, 现在传 0) */
-        VMC_StateUpdate(&vmc_left_s, alpha_enc, beta_enc, 0.001f);
-        VMC_ForceCalc(&vmc_left_s, alpha_enc, beta_enc, 0.0f);
+    DM_8009Motor_Init(&DM8009_Ctrl[0], LeftFrontCAN_ID);
+    DM_CtrlStop(&DM8009_Ctrl[0]);
+    DM_8009Motor_Init(&DM8009_Ctrl[1], LeftBehindCAN_ID);
+    DM_CtrlStop(&DM8009_Ctrl[1]);
+    DM_Enable(&hfdcan1, &DM8009_Ctrl[0]);
+    DM_Enable(&hfdcan1, &DM8009_Ctrl[1]);
 
-        /* 3. N·mm → N·m + M0 软限幅 */
+    VMC_init(&vmc_left_s);
+
+    while (1)
+    {
+        float joint_a_angle_rad = DM8009_Ctrl[0].fb.processed_pos;
+        float joint_b_angle_rad  = DM8009_Ctrl[1].fb.processed_pos;
+
+        VMC_StateUpdate(&vmc_left_s, joint_a_angle_rad, joint_b_angle_rad, 0.001f);
+
+        if (leg_safety_ok(&DM8009_Ctrl[0], &DM8009_Ctrl[1], &vmc_left_s))
+        {
+            /* 达妙式纯控制: 横滚 + 防劈叉 + LQR, 每周期全通道输出 */
+            float T_p_antisplit_Nmm = AntiSplit_Loop(vmc_left_s.theta_rel_body_rad,
+                                                     vmc_right_s.theta_rel_body_rad);
+            vmc_left_s.F_roll_N = Roll_Loop(0.0f, INS.Roll, INS.Gyro[1]);
+
+            float v_wheel_m_s = motor_measure_L.speed_rpm * 0.000327f * WHEEL_V_SIGN_L;
+            Balance_Update(&bal_left, &vmc_left_s, &INS, v_wheel_m_s, 0.001f);
+            vmc_left_s.T_p_Nmm = bal_left.Tp_Nmm - T_p_antisplit_Nmm;
+            VMC_ForceCalc(&vmc_left_s, joint_a_angle_rad, joint_b_angle_rad);
+            WheelTorque_Send(&hfdcan2, bal_left.T_Nm, bal_right.T_Nm);
+        }
+        else
+        {
+            /* 保护: 全零 + 复位 */
+            vmc_left_s.fk_s.tau_a = vmc_left_s.fk_s.tau_b = 0.0f;
+            vmc_left_s.T_p_Nmm = 0.0f;
+            bal_left.T_Nm = 0.0f;
+            bal_left.Tp_Nmm = 0.0f;
+            bal_left.x_m = 0.0f;
+            vmc_left_s.first_flag = 1;
+            WheelTorque_Send(&hfdcan2, 0.0f, 0.0f);
+        }
+
+        /* 下发 (限幅为常规输出保护, 达妙同款) */
         float ta = vmc_left_s.fk_s.tau_a / 1000.0f;
         float tb = vmc_left_s.fk_s.tau_b / 1000.0f;
         if (ta >  TORQUE_LIMIT) ta =  TORQUE_LIMIT;
         if (ta < -TORQUE_LIMIT) ta = -TORQUE_LIMIT;
         if (tb >  TORQUE_LIMIT) tb =  TORQUE_LIMIT;
         if (tb < -TORQUE_LIMIT) tb = -TORQUE_LIMIT;
-
-        /* 4. 下发 (注意: Set_LeftOne 内部写死 DM8009_Ctrl[0], LeftTwo 写死 [1]) */
         Set_LeftOneTorqueMIT(&hfdcan1, &DM8009_Ctrl[0], ta);
         DM_SendCmd(&hfdcan1, &DM8009_Ctrl[0]);
         Set_LeftTwoTorqueMIT(&hfdcan1, &DM8009_Ctrl[1], tb);
         DM_SendCmd(&hfdcan1, &DM8009_Ctrl[1]);
-		
-//		for(int i = 0;i<2;i++)
-//		{
-//			DM_SendCmd(&hfdcan1, &DM8009_Ctrl[i]);
-//		}
-		static int count = 0;
-		if(count % 1000 == 0)
-		{	
-			int delta = remote_ctrl.rc.ch[0]/60;
-			vmc_left_s.L0_set += delta;
-		}
-		count++;
-		
-		if(vmc_left_s.L0_set <= 180)
-		{
-			vmc_left_s.L0_set = 180;
-		}
-		if(vmc_left_s.L0_set> 300)
-		{
-			vmc_left_s.L0_set = 300;
-		}
-		
-        osDelay(1);                   // 1ms 控制周期 (和 dt=0.001f 对齐)
-		
-		s1 = fivebar_fk(DM8009_Ctrl[0].fb.processed_pos,DM8009_Ctrl[1].fb.processed_pos);
-		r1 = fivebar_ik(s1.B.x,s1.B.y);
-	}
+
+        osDelay(1);
+    }
 }
 
 void RLeg_task(void *argument)
 {
+    while (remote_ctrl.rc.ch[1] < 500);   /* 遥控使能闸 */
+
     DM_8009Motor_Init(&DM8009_Ctrl[2], RightFrontCAN_ID);
     DM_CtrlStop(&DM8009_Ctrl[2]);
     DM_8009Motor_Init(&DM8009_Ctrl[3], RightBehindCAN_ID);
@@ -97,69 +98,71 @@ void RLeg_task(void *argument)
     DM_Enable(&hfdcan1, &DM8009_Ctrl[2]);
     DM_Enable(&hfdcan1, &DM8009_Ctrl[3]);
 
-    VMC_init(&vmc_right_s);                      // ← 缺的初始化
+    VMC_init(&vmc_right_s);
 
     while (1)
     {
-        float alpha_enc = -DM8009_Ctrl[2].fb.processed_pos;   // 右腿编码器, 进运动学前取反
-        float beta_enc  = -DM8009_Ctrl[3].fb.processed_pos;
+        float joint_a_angle_rad = -DM8009_Ctrl[2].fb.processed_pos;   /* 镜像: 进运动学前取反 */
+        float joint_b_angle_rad  = -DM8009_Ctrl[3].fb.processed_pos;
 
-        VMC_StateUpdate(&vmc_right_s, alpha_enc, beta_enc, 0.001f);
-        VMC_ForceCalc(&vmc_right_s, alpha_enc, beta_enc, 0.0f);
+        VMC_StateUpdate(&vmc_right_s, joint_a_angle_rad, joint_b_angle_rad, 0.001f);
 
-        float ta = -vmc_right_s.fk_s.tau_a / 1000.0f;   // 出运动学后取反
+        if (leg_safety_ok(&DM8009_Ctrl[2], &DM8009_Ctrl[3], &vmc_right_s))
+        {
+            float T_p_antisplit_Nmm = AntiSplit_Loop(vmc_left_s.theta_rel_body_rad,
+                                                     vmc_right_s.theta_rel_body_rad);
+            vmc_right_s.F_roll_N = -Roll_Loop(0.0f, INS.Roll, INS.Gyro[1]);
+
+            float v_wheel_m_s = motor_measure_R.speed_rpm * 0.000327f * WHEEL_V_SIGN_R;
+            Balance_Update(&bal_right, &vmc_right_s, &INS, v_wheel_m_s, 0.001f);
+            vmc_right_s.T_p_Nmm = bal_right.Tp_Nmm + T_p_antisplit_Nmm;
+            VMC_ForceCalc(&vmc_right_s, joint_a_angle_rad, joint_b_angle_rad);
+        }
+        else
+        {
+            vmc_right_s.fk_s.tau_a = vmc_right_s.fk_s.tau_b = 0.0f;
+            vmc_right_s.T_p_Nmm = 0.0f;
+            bal_right.T_Nm = 0.0f;
+            bal_right.Tp_Nmm = 0.0f;
+            bal_right.x_m = 0.0f;
+            vmc_right_s.first_flag = 1;
+        }
+
+        float ta = -vmc_right_s.fk_s.tau_a / 1000.0f;   /* 出运动学后取反 */
         float tb = -vmc_right_s.fk_s.tau_b / 1000.0f;
         if (ta >  TORQUE_LIMIT) ta =  TORQUE_LIMIT;
         if (ta < -TORQUE_LIMIT) ta = -TORQUE_LIMIT;
         if (tb >  TORQUE_LIMIT) tb =  TORQUE_LIMIT;
         if (tb < -TORQUE_LIMIT) tb = -TORQUE_LIMIT;
-
-        Set_RightOneTorqueMIT(&hfdcan1, &DM8009_Ctrl[2], ta);   // 右腿专用下发, 内部写死 Ctrl[2]
+        Set_RightOneTorqueMIT(&hfdcan1, &DM8009_Ctrl[2], ta);
         DM_SendCmd(&hfdcan1, &DM8009_Ctrl[2]);
         Set_RightTwoTorqueMIT(&hfdcan1, &DM8009_Ctrl[3], tb);
         DM_SendCmd(&hfdcan1, &DM8009_Ctrl[3]);
-
-        static int count = 0;
-        if (count % 1000 == 0)
-            vmc_right_s.L0_set += remote_ctrl.rc.ch[1] / 60;    // 右腿自己的目标
-        count++;
-        if (vmc_right_s.L0_set <= 180) vmc_right_s.L0_set = 180;
-        if (vmc_right_s.L0_set >  300) vmc_right_s.L0_set = 300;
 
         osDelay(1);
     }
 }
 
-uint8_t Gap_check(LeftLegCtrl_s *c1,LeftLegCtrl_s *c2)
+/* 横滚环: Roll 误差 -> 两腿力差 (Roll loop: roll error -> leg force diff)
+ * roll_set : 目标横滚角 [rad], 站立 = 0, 压弯时给非零
+ * roll     : INS.Roll [rad]
+ * roll_gyro: 横滚轴角速度 [rad/s]
+ * 返回 ΔF [N], 左腿取正、右腿取负 */
+float Roll_Loop(float roll_set, float roll, float roll_gyro)
 {
-	static fp32 delta = 0.0f;
-	
-	if((c2->Now_AbsoluteAngle - c1->Now_AbsoluteAngle) >= M_PI)//连杆夹角包含了0
-	{
-		delta = c1->Now_AbsoluteAngle + 2.0f* M_PI - c2->Now_AbsoluteAngle;
-	}
-	else
-	{
-		fp32 diff = c2->Now_AbsoluteAngle - c1->Now_AbsoluteAngle + M_PI;
-		fp32 cycle = 2.0f * M_PI;
-		while(diff >= cycle)
-		{
-			diff -= cycle;
-		}
-		while(diff < 0.0f)
-		{
-			diff += cycle;
-		}
-		delta = diff - M_PI;
-	}
-	
-	if(delta >= MAX_DELTA || delta <=MIN_DELTA)
-	{
-		for(int i = 0;i<2;i++)
-		{
-			LeftCtrl[i].noPowerflag = 1;
-		}
-		return 0;
-	}
-	return 1;
+    float out = ROLL_KP * (roll_set - roll) - ROLL_KD * roll_gyro;
+    if (out >  ROLL_MAX_OUT) out =  ROLL_MAX_OUT;
+    if (out < -ROLL_MAX_OUT) out = -ROLL_MAX_OUT;
+    return out;
+}
+
+/* 防劈叉环: 两腿夹角差 -> 修正力矩 (Anti-split: leg angle diff -> corrective T_p_Nmm)
+ * 返回 K*(theta_rel_body_L_rad - theta_rel_body_R_rad) [N*mm]; 左腿取负、右腿取正
+ * 两腿同向一起摆时差=0, 不产生力矩; 前后劈叉时差≠0, 力矩把两腿拉回对称 */
+float AntiSplit_Loop(float theta_rel_body_L_rad, float theta_rel_body_R_rad)
+{
+    float out = ANTI_SPLIT_KP * (theta_rel_body_L_rad - theta_rel_body_R_rad);
+    if (out >  ANTI_SPLIT_MAX) out =  ANTI_SPLIT_MAX;
+    if (out < -ANTI_SPLIT_MAX) out = -ANTI_SPLIT_MAX;
+    return out;
 }

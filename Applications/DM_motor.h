@@ -111,7 +111,7 @@ void DM_UnpackFb(const uint8_t data[8], DM_state *fb);
 HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
 
 //电机使能
-void DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
+HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
 //电机关闭
 void DM_Disable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
 //MIT

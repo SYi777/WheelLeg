@@ -69,9 +69,6 @@ wheelleg\leg_tasks.o: ../Drivers/CMSIS/DSP/Include/dsp/filtering_functions.h
 wheelleg\leg_tasks.o: ../Drivers/CMSIS/DSP/Include/dsp/quaternion_math_functions.h
 wheelleg\leg_tasks.o: ../Applications/struct_typedef.h
 wheelleg\leg_tasks.o: ../Algorithm/pid.h
-wheelleg\leg_tasks.o: ../Kinematics/forward_solution.h
-wheelleg\leg_tasks.o: D:\Applications\Keil\ARM\ARMCC\Bin\..\include\stdbool.h
-wheelleg\leg_tasks.o: ../Kinematics/inverse_solution.h
 wheelleg\leg_tasks.o: ../Applications/Remote_control.h
 wheelleg\leg_tasks.o: ../Bsp/bsp_RC.h
 wheelleg\leg_tasks.o: ../Algorithm/VMC.h
@@ -80,3 +77,8 @@ wheelleg\leg_tasks.o: ../Devices/BMI088driver.h
 wheelleg\leg_tasks.o: ../Algorithm/QuaternionEKF.h
 wheelleg\leg_tasks.o: ../Algorithm/kalman_filter.h
 wheelleg\leg_tasks.o: D:\Applications\Keil\ARM\ARMCC\Bin\..\include\stdlib.h
+wheelleg\leg_tasks.o: ../Kinematics/forward_solution.h
+wheelleg\leg_tasks.o: D:\Applications\Keil\ARM\ARMCC\Bin\..\include\stdbool.h
+wheelleg\leg_tasks.o: ../Applications/3508_CtrlApplications.h
+wheelleg\leg_tasks.o: ../Algorithm/balance.h
+wheelleg\leg_tasks.o: ../Drivers/CMSIS/RTOS2/Include/cmsis_os2.h

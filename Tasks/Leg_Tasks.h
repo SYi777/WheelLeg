@@ -39,5 +39,7 @@ void RLeg_task(void *argument);
 uint8_t Gap_check(LeftLegCtrl_s *c1,LeftLegCtrl_s *c2);
 void Left_leg_init(void);
 void Update_left_leg(LeftLegCtrl_s *c);
+float Roll_Loop(float roll_set, float roll, float roll_gyro);
+float AntiSplit_Loop(float theta_rel_body_L_rad, float theta_rel_body_R_rad);
 
 #endif

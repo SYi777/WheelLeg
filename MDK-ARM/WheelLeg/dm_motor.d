@@ -44,3 +44,14 @@ wheelleg\dm_motor.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart.h
 wheelleg\dm_motor.o: ../Drivers/STM32H7xx_HAL_Driver/Inc/stm32h7xx_hal_uart_ex.h
 wheelleg\dm_motor.o: D:\Applications\Keil\ARM\ARMCC\Bin\..\include\string.h
 wheelleg\dm_motor.o: ..\Applications\8009_CtrlApplications.h
+wheelleg\dm_motor.o: ..\Applications\3508_CtrlApplications.h
+wheelleg\dm_motor.o: ..\Applications\struct_typedef.h
+wheelleg\dm_motor.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/FreeRTOS.h
+wheelleg\dm_motor.o: ../Core/Inc/FreeRTOSConfig.h
+wheelleg\dm_motor.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/projdefs.h
+wheelleg\dm_motor.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/portable.h
+wheelleg\dm_motor.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/deprecated_definitions.h
+wheelleg\dm_motor.o: ../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F/portmacro.h
+wheelleg\dm_motor.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wrappers.h
+wheelleg\dm_motor.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
+wheelleg\dm_motor.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
