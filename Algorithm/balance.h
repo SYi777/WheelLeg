@@ -4,36 +4,48 @@
 #include "INS_task.h"
 #include "VMC.h"
 
-#define THETA_E_RAD         0.045542f   /* 平衡点腿角: 髋略前为正 (模型值, 与 K 同源 y=-0.065042) */
-#define PITCH_GYRO_AXIS     0              /* M0 标定: 车绕左右轴点头看哪个 Gyro 轴 */
-
-#define LQR_T_LIMIT_NM      5.0f           /* 轮扭矩限幅 [N·m] (与电机最大输出一致) */
-#define LQR_TP_LIMIT_NMM    13000.0f        /* 髋力矩限幅 [N·mm] */
-
-/* M2 符号核对宏 (推腿测试后定死):
- * LQR_TP_SIGN = +1: observed nose-down response matches the model.
- * LQR_WHEEL_SIGN = 第一步先置 0 (只测髋通道), 轮子方向标定后置 ±1
- * LQR_PITCH_SIGN = 模型 φ 与 INS.Pitch 同正(车头仰起 Pitch 为正)时 +1 */
+/* Sensor-coordinate equilibrium in radians. This is not the COM offset y [m]. */
+#define THETA_E_RAD         (-0.065042f)
+#define PITCH_GYRO_AXIS     0
+#define LQR_LEG_SIGN        (1.0f)
+#define LQR_PITCH_SIGN      (1.0f)
 #define LQR_TP_SIGN         (1.0f)
-#define LQR_WHEEL_SIGN      ( -1.0f)
-#define LQR_PITCH_SIGN      ( 1.0f)
-
-#define WHEEL_RADIUS_M      0.06f           /* 与建模 R 一致 */
-#define WHEEL_V_SIGN_L      (-1.0f)         /* M0 标定, 见文末说明 */
-#define WHEEL_V_SIGN_R      (1.0f)         /* M0 标定, 见文末说明 */
+#define LQR_WHEEL_SIGN      (-1.0f)
+#define WHEEL_V_SIGN_L      (-1.0f)
+#define WHEEL_V_SIGN_R      (1.0f)
+#define WHEEL_RADIUS_M      0.06f
+/* Existing RPM scale retained: motor rotor RPM -> output-wheel linear speed. */
+#define WHEEL_RPM_TO_M_S    0.000327f
+#define LQR_T_LIMIT_NM      5.0f
+#define LQR_TP_LIMIT_NMM    13000.0f
+/* Negative feedback on v_R-v_L, expressed in MODEL forward wheel torque. */
+#define WHEEL_DIFF_KD       1.0f   /* N*m / (m/s), initial damping gain */
+#define WHEEL_DIFF_LIMIT_NM 0.8f
 
 typedef struct
 {
-    float theta_rad;        /* 模型 θ = theta_rel_body_rad ? phi  [rad] */
-    float dtheta_rad_s;     /* 模型 θ? */
-    float x_m;              /* 轮位移 [m] (轮速里程计未接, 暂 0) */
-    float v_m_s;            /* 车速 [m/s] */
-    float phi_rad;          /* 模型 φ = INS.Pitch [rad] */
-    float dphi_rad_s;       /* 模型 φ? */
-    float T_Nm;             /* 轮扭矩输出 [N·m] */
-    float Tp_Nmm;           /* 髋力矩输出 [N·mm] */
+    float theta_rad, dtheta_rad_s;
+    float x_m, v_m_s; /* Unclipped wheel odometry relative to control reset. */
+    float phi_rad, dphi_rad_s;
+    /* Driver-facing wheel command; convert with LQR_WHEEL_SIGN for model T. */
+    float T_Nm;
+    float Tp_Nmm;
 } balance_t;
 
-void Balance_Update(balance_t *bal, const vmc_t *vmc, const INS_t *ins,
-                    float v_wheel_m_s, float dt);
+typedef struct
+{
+    balance_t common;             /* Symmetric longitudinal state, one x integral. */
+    float v_raw_L_m_s, v_raw_R_m_s;
+    float v_L_m_s, v_R_m_s;
+    float T_common_model_Nm, Tp_common_model_Nm;
+    float T_diff_model_Nm;        /* +left, -right before driver sign conversion. */
+    float wheel_terms_Nm[6], hip_terms_Nm[6];
+} balance_pair_t;
+
+float Balance_WheelVelocity(float rpm, float rpm_sign, const vmc_t *vmc,
+                            const INS_t *ins);
+void Balance_PairUpdate(balance_pair_t *pair, balance_t *left, balance_t *right,
+                        const vmc_t *vmc_left, const vmc_t *vmc_right,
+                        const INS_t *ins, float rpm_left, float rpm_right, float dt);
+void Balance_PairReset(balance_pair_t *pair, balance_t *left, balance_t *right);
 #endif

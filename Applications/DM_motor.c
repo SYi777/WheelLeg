@@ -53,10 +53,14 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
                     
 				case CAN_3508_ML_ID:// 0x201 左轮
 					get_motor_measure(&motor_measure_L, RxData);
+                    wheel_drive_diag.last_fb_tick[0] = HAL_GetTick();
+                    wheel_drive_diag.rx_cnt[0]++;
                     break;
 				
                 case CAN_3508_MR_ID:// 0x202 右轮
                     get_motor_measure(&motor_measure_R, RxData);
+                    wheel_drive_diag.last_fb_tick[1] = HAL_GetTick();
+                    wheel_drive_diag.rx_cnt[1]++;
                     break;
 				
                 default:

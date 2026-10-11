@@ -1,168 +1,294 @@
 #include "Leg_Tasks.h"
-#include "Remote_control.h"
 #include "VMC.h"
 #include "3508_CtrlApplications.h"
 #include "balance.h"
 #include "INS_task.h"
 #include "cmsis_os2.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "dwt.h"
+#include <string.h>
 
-extern vmc_t vmc_left_s;
-extern vmc_t vmc_right_s;
+extern vmc_t vmc_left_s, vmc_right_s;
+balance_t bal_left, bal_right;
+balance_pair_t bal_pair;
 
-balance_t bal_left;
-balance_t bal_right;
+typedef struct
+{
+    uint8_t valid, hip_enabled_mask, jac_ok_mask;
+    uint32_t tick_ms, cycle;
+    float dt_s;
+    balance_pair_t pair;
+    balance_t left, right;
+    float L_L_mm, L_R_mm, L_set_L_mm, L_set_R_mm;
+    float L_dot_L_mm_s, L_dot_R_mm_s;
+    float F_axis_L_N, F_axis_R_N, F_spring_L_N, F_spring_R_N;
+    float F_gravity_L_N, F_gravity_R_N, F_roll_L_N, F_roll_R_N;
+    float vmc_Tp_L_Nmm, vmc_Tp_R_Nmm;
+    float F_axis_applied_L_N, F_axis_applied_R_N;
+    float vmc_Tp_applied_L_Nmm, vmc_Tp_applied_R_Nmm;
+    float Tp_sent_L_Nm, Tp_sent_R_Nm, Tp_fb_L_Nm, Tp_fb_R_Nm;
+    float tau_request_Nm[4];
+    uint8_t allocation_limited_mask;
+    float tau_cmd_Nm[4], tau_fb_Nm[4];
+    uint32_t hip_tx_status[4], hip_fb_age_ms[4], hip_rx_cnt[4];
+    float joint_velocity_rad_s[4];
+    int16_t rpm_L, rpm_R, current_fb_L, current_fb_R;
+    int16_t wheel_current_cmd_raw[2];
+    uint32_t wheel_fb_age_ms[2], wheel_rx_cnt[2];
+    uint32_t wheel_tx_status, wheel_tx_cnt, wheel_tx_fail_cnt;
+    uint32_t can_tx_free[2], can_tx_error_count[2], can_rx_error_count[2];
+    uint32_t can_bus_off[2];
+} balance_diag_t;
+volatile balance_diag_t balance_diag, balance_diag_standing, balance_diag_latest;
+/* 128 valid frames at 20 ms: retain roughly 2.56 s before feedback loss.
+ * next points to the next slot; newest is (next+127)%128. */
+#define BALANCE_HISTORY_COUNT 128U
+volatile balance_diag_t balance_diag_history[BALANCE_HISTORY_COUNT];
+volatile uint32_t balance_diag_history_next, balance_diag_history_count;
+volatile uint32_t balance_control_cycle, balance_control_overruns;
+volatile float balance_control_dt_s;
 
-float Roll_Loop(float roll_set, float roll, float roll_gyro);
-float AntiSplit_Loop(float theta_rel_body_L_rad, float theta_rel_body_R_rad);
+static float limited(float x, float bound)
+{
+    if (x > bound) return bound;
+    if (x < -bound) return -bound;
+    return x;
+}
 
-/* 安全保护: 电机断联或正解失败 -> 禁止输出 */
 static int leg_safety_ok(const DM_Motor *m0, const DM_Motor *m1, const vmc_t *vmc)
 {
     uint32_t now = HAL_GetTick();
-    if (m0->online == 0 || m1->online == 0) return 0;
-    if (now - m0->last_fb_tick > DM_COMM_TIMEOUT_MS) return 0;
-    if (now - m1->last_fb_tick > DM_COMM_TIMEOUT_MS) return 0;
-    if (vmc->fk_s.fk.status != FK_OK) return 0;
-    return 1;
+    return m0->online && m1->online && m0->fb.enabled && m1->fb.enabled
+        && !m0->fb.fault && !m1->fb.fault
+        && now - m0->last_fb_tick <= DM_COMM_TIMEOUT_MS
+        && now - m1->last_fb_tick <= DM_COMM_TIMEOUT_MS
+        && vmc->fk_s.fk.status == FK_OK && vmc->fk_s.jac_ok;
 }
 
+static void capture(volatile balance_diag_t *d, const float torque[4])
+{
+    d->valid = 0U;
+    d->tick_ms = HAL_GetTick();
+    d->cycle = balance_control_cycle;
+    d->dt_s = balance_control_dt_s;
+    d->pair = bal_pair;
+    d->left = bal_left;
+    d->right = bal_right;
+    d->L_L_mm = vmc_left_s.L_t_mm;
+    d->L_R_mm = vmc_right_s.L_t_mm;
+    d->L_set_L_mm = vmc_left_s.L_t_set_mm;
+    d->L_set_R_mm = vmc_right_s.L_t_set_mm;
+    d->L_dot_L_mm_s = vmc_left_s.L_t_dot_mm_s;
+    d->L_dot_R_mm_s = vmc_right_s.L_t_dot_mm_s;
+    d->F_axis_L_N = vmc_left_s.F_axis_N;
+    d->F_axis_R_N = vmc_right_s.F_axis_N;
+    d->F_spring_L_N = vmc_left_s.F_spring_N;
+    d->F_spring_R_N = vmc_right_s.F_spring_N;
+    d->F_gravity_L_N = vmc_left_s.F_gravity_N;
+    d->F_gravity_R_N = vmc_right_s.F_gravity_N;
+    d->F_roll_L_N = vmc_left_s.F_roll_N;
+    d->F_roll_R_N = vmc_right_s.F_roll_N;
+    d->vmc_Tp_L_Nmm = vmc_left_s.T_p_Nmm;
+    d->vmc_Tp_R_Nmm = vmc_right_s.T_p_Nmm;
+    d->F_axis_applied_L_N = vmc_left_s.F_axis_applied_N;
+    d->F_axis_applied_R_N = vmc_right_s.F_axis_applied_N;
+    d->vmc_Tp_applied_L_Nmm = vmc_left_s.T_p_applied_Nmm;
+    d->vmc_Tp_applied_R_Nmm = vmc_right_s.T_p_applied_Nmm;
+    /* Coaxial equivalent FK: common rotation gives Tp = tau_a + tau_b. */
+    d->Tp_sent_L_Nm = torque[0] + torque[1];
+    d->Tp_sent_R_Nm = -(torque[2] + torque[3]);
+    d->tau_request_Nm[0] = vmc_left_s.tau_request_a_Nm;
+    d->tau_request_Nm[1] = vmc_left_s.tau_request_b_Nm;
+    d->tau_request_Nm[2] = -vmc_right_s.tau_request_a_Nm;
+    d->tau_request_Nm[3] = -vmc_right_s.tau_request_b_Nm;
+    d->allocation_limited_mask = (vmc_left_s.axis_force_limited ? 1U : 0U)
+         | (vmc_right_s.axis_force_limited ? 2U : 0U)
+         | (vmc_left_s.hip_moment_limited ? 4U : 0U)
+         | (vmc_right_s.hip_moment_limited ? 8U : 0U);
+    /* Command is current-cycle; feedback is the last asynchronous CAN sample.
+     * Record ages/counters and copy feedback atomically; never imply simultaneity. */
+    taskENTER_CRITICAL();
+    uint32_t feedback_now = HAL_GetTick();
+    d->hip_enabled_mask = 0;
+    for (int i = 0; i < 4; ++i)
+    {
+        d->hip_enabled_mask |= DM8009_Ctrl[i].fb.enabled ? (1U << i) : 0U;
+        d->tau_cmd_Nm[i] = torque[i];
+        d->tau_fb_Nm[i] = DM8009_Ctrl[i].fb.torque;
+        d->hip_tx_status[i] = DM8009_Ctrl[i].last_tx_status;
+        d->hip_fb_age_ms[i] = feedback_now - DM8009_Ctrl[i].last_fb_tick;
+        d->hip_rx_cnt[i] = DM8009_Ctrl[i].rx_cnt;
+        d->joint_velocity_rad_s[i] = DM8009_Ctrl[i].fb.velocity;
+    }
+    d->jac_ok_mask = (vmc_left_s.fk_s.jac_ok ? 1U : 0U)
+                   | (vmc_right_s.fk_s.jac_ok ? 2U : 0U);
+    d->rpm_L = motor_measure_L.speed_rpm;
+    d->rpm_R = motor_measure_R.speed_rpm;
+    d->current_fb_L = motor_measure_L.given_current;
+    d->current_fb_R = motor_measure_R.given_current;
+    d->Tp_fb_L_Nm = d->tau_fb_Nm[0] + d->tau_fb_Nm[1];
+    d->Tp_fb_R_Nm = -(d->tau_fb_Nm[2] + d->tau_fb_Nm[3]);
+    for (int i = 0; i < 2; ++i)
+    {
+        d->wheel_current_cmd_raw[i] = wheel_drive_diag.current_cmd_raw[i];
+        d->wheel_fb_age_ms[i] = feedback_now - wheel_drive_diag.last_fb_tick[i];
+        d->wheel_rx_cnt[i] = wheel_drive_diag.rx_cnt[i];
+    }
+    d->wheel_tx_status = wheel_drive_diag.tx_status;
+    d->wheel_tx_cnt = wheel_drive_diag.tx_cnt;
+    d->wheel_tx_fail_cnt = wheel_drive_diag.tx_fail_cnt;
+    taskEXIT_CRITICAL();
+    FDCAN_HandleTypeDef *buses[2] = {&hfdcan1, &hfdcan2};
+    for (int i = 0; i < 2; ++i)
+    {
+        FDCAN_ProtocolStatusTypeDef protocol = {0};
+        FDCAN_ErrorCountersTypeDef errors = {0};
+        (void)HAL_FDCAN_GetProtocolStatus(buses[i], &protocol);
+        (void)HAL_FDCAN_GetErrorCounters(buses[i], &errors);
+        d->can_tx_free[i] = HAL_FDCAN_GetTxFifoFreeLevel(buses[i]);
+        d->can_tx_error_count[i] = errors.TxErrorCnt;
+        d->can_rx_error_count[i] = errors.RxErrorCnt;
+        d->can_bus_off[i] = protocol.BusOff;
+    }
+    d->valid = 1U;
+}
+
+/* One owner updates BOTH legs, one shared LQR state, then all six motor commands. */
 void LLeg_task(void *argument)
 {
-    while (remote_ctrl.rc.ch[0] < 500);   /* 遥控使能闸 */
-
-    DM_8009Motor_Init(&DM8009_Ctrl[0], LeftFrontCAN_ID);
-    DM_CtrlStop(&DM8009_Ctrl[0]);
-    DM_8009Motor_Init(&DM8009_Ctrl[1], LeftBehindCAN_ID);
-    DM_CtrlStop(&DM8009_Ctrl[1]);
-    DM_Enable(&hfdcan1, &DM8009_Ctrl[0]);
-    DM_Enable(&hfdcan1, &DM8009_Ctrl[1]);
-
-    VMC_init(&vmc_left_s);
-
-    while (1)
+    (void)argument;
+    osDelay(5000); /* Preserve the currently working power-on rise delay. */
+    const uint8_t ids[4] = {LeftFrontCAN_ID, LeftBehindCAN_ID,
+                            RightFrontCAN_ID, RightBehindCAN_ID};
+    for (int i = 0; i < 4; ++i)
     {
-        float joint_a_angle_rad = DM8009_Ctrl[0].fb.processed_pos;
-        float joint_b_angle_rad  = DM8009_Ctrl[1].fb.processed_pos;
+        DM_8009Motor_Init(&DM8009_Ctrl[i], ids[i]);
+        DM_CtrlStop(&DM8009_Ctrl[i]);
+    }
+    for (int retry = 0; retry < 10; ++retry)
+    {
+        for (int i = 0; i < 4; ++i) DM_Enable(&hfdcan1, &DM8009_Ctrl[i]);
+        osDelay(2);
+    }
+    VMC_init(&vmc_left_s);
+    VMC_init(&vmc_right_s);
+    uint32_t next_wake = osKernelGetTickCount();
+    uint32_t period = osKernelGetTickFreq() / 1000U;
+    if (period == 0U) period = 1U;
+    uint32_t latest_capture_tick = 0, history_capture_tick = 0;
+    uint32_t dwt_last = 0;
+    (void)DWT_GetDeltaT(&dwt_last);
 
-        VMC_StateUpdate(&vmc_left_s, joint_a_angle_rad, joint_b_angle_rad, 0.001f);
+    for (;;)
+    {
+        float dt = DWT_GetDeltaT(&dwt_last);
+        if (balance_control_cycle == 0U) dt = 0.001f;
+        balance_control_dt_s = dt;
+        balance_control_cycle++;
+        INS_t ins;
+        DM_state fb[4];
+        float rpm_left, rpm_right;
+        /* A CAN or INS update cannot split the position/velocity pairs we consume. */
+        taskENTER_CRITICAL();
+        ins = INS;
+        for (int i = 0; i < 4; ++i) fb[i] = DM8009_Ctrl[i].fb;
+        rpm_left = motor_measure_L.speed_rpm;
+        rpm_right = motor_measure_R.speed_rpm;
+        taskEXIT_CRITICAL();
 
-        if (leg_safety_ok(&DM8009_Ctrl[0], &DM8009_Ctrl[1], &vmc_left_s))
+        VMC_StateUpdateWithVelocity(&vmc_left_s, fb[0].processed_pos, fb[1].processed_pos,
+                                     fb[0].velocity, fb[1].velocity, dt);
+        VMC_StateUpdateWithVelocity(&vmc_right_s, -fb[2].processed_pos, -fb[3].processed_pos,
+                                     -fb[2].velocity, -fb[3].velocity, dt);
+        int ready = dt > 0.0f && dt < 0.01f
+                 && leg_safety_ok(&DM8009_Ctrl[0], &DM8009_Ctrl[1], &vmc_left_s)
+                 && leg_safety_ok(&DM8009_Ctrl[2], &DM8009_Ctrl[3], &vmc_right_s);
+        float torque[4] = {0};
+        if (ready)
         {
-            /* 达妙式纯控制: 横滚 + 防劈叉 + LQR, 每周期全通道输出 */
-            float T_p_antisplit_Nmm = AntiSplit_Loop(vmc_left_s.theta_rel_body_rad,
-                                                     vmc_right_s.theta_rel_body_rad);
-            vmc_left_s.F_roll_N = Roll_Loop(0.0f, INS.Roll, INS.Gyro[1]);
-
-            float v_wheel_m_s = motor_measure_L.speed_rpm * 0.000327f * WHEEL_V_SIGN_L;
-            Balance_Update(&bal_left, &vmc_left_s, &INS, v_wheel_m_s, 0.001f);
-            vmc_left_s.T_p_Nmm = bal_left.Tp_Nmm - T_p_antisplit_Nmm;
-            VMC_ForceCalc(&vmc_left_s, joint_a_angle_rad, joint_b_angle_rad);
-            WheelTorque_Send(&hfdcan2, bal_left.T_Nm, bal_right.T_Nm);
+            Balance_PairUpdate(&bal_pair, &bal_left, &bal_right, &vmc_left_s,
+                               &vmc_right_s, &ins, rpm_left, rpm_right, dt);
+            float roll_force = Roll_Loop(0.0f, ins.Roll, ins.Gyro[1]);
+            float split_torque = AntiSplit_Loop(vmc_left_s.theta_rel_body_rad,
+                                                vmc_right_s.theta_rel_body_rad);
+            /* Add damping in the same FK angular coordinate as the spring term. */
+            split_torque += ANTI_SPLIT_KD * (vmc_left_s.theta_rel_body_dot_rad_s
+                                             - vmc_right_s.theta_rel_body_dot_rad_s);
+            split_torque = limited(split_torque, ANTI_SPLIT_MAX);
+            vmc_left_s.F_roll_N = roll_force;
+            vmc_right_s.F_roll_N = -roll_force;
+            vmc_left_s.T_p_Nmm = bal_left.Tp_Nmm - split_torque;
+            vmc_right_s.T_p_Nmm = bal_right.Tp_Nmm + split_torque;
+            VMC_ForceCalc(&vmc_left_s, fb[0].processed_pos, fb[1].processed_pos);
+            VMC_ForceCalc(&vmc_right_s, -fb[2].processed_pos, -fb[3].processed_pos);
+            torque[0] = vmc_left_s.fk_s.tau_a / 1000.0f;
+            torque[1] = vmc_left_s.fk_s.tau_b / 1000.0f;
+            torque[2] = -vmc_right_s.fk_s.tau_a / 1000.0f;
+            torque[3] = -vmc_right_s.fk_s.tau_b / 1000.0f;
         }
         else
         {
-            /* 保护: 全零 + 复位 */
+            Balance_PairReset(&bal_pair, &bal_left, &bal_right);
+            vmc_left_s.T_p_Nmm = vmc_right_s.T_p_Nmm = 0.0f;
+            vmc_left_s.F_axis_applied_N = vmc_right_s.F_axis_applied_N = 0.0f;
+            vmc_left_s.T_p_applied_Nmm = vmc_right_s.T_p_applied_Nmm = 0.0f;
             vmc_left_s.fk_s.tau_a = vmc_left_s.fk_s.tau_b = 0.0f;
-            vmc_left_s.T_p_Nmm = 0.0f;
-            bal_left.T_Nm = 0.0f;
-            bal_left.Tp_Nmm = 0.0f;
-            bal_left.x_m = 0.0f;
-            vmc_left_s.first_flag = 1;
-            WheelTorque_Send(&hfdcan2, 0.0f, 0.0f);
+            vmc_right_s.fk_s.tau_a = vmc_right_s.fk_s.tau_b = 0.0f;
+            vmc_left_s.first_flag = vmc_right_s.first_flag = 1U;
         }
+        for (int i = 0; i < 4; ++i)
+        {
+            torque[i] = limited(torque[i], TORQUE_LIMIT);
+            DM_MITCtrl(&DM8009_Ctrl[i], 0.0f, 0.0f, 0.0f, 0.0f, torque[i]);
+            DM_SendCmd(&hfdcan1, &DM8009_Ctrl[i]);
+        }
+        WheelTorque_Send(&hfdcan2, bal_left.T_Nm, bal_right.T_Nm);
+        /* Refresh only on valid control frames; retained after feedback loss/stop. */
+        if (ready && HAL_GetTick() - latest_capture_tick >= 100U)
+        {
+            capture(&balance_diag_latest, torque);
+            latest_capture_tick = HAL_GetTick();
+        }
+        if (ready && HAL_GetTick() - history_capture_tick >= 20U)
+        {
+            capture(&balance_diag_history[balance_diag_history_next], torque);
+            balance_diag_history_next = (balance_diag_history_next + 1U)
+                                       % BALANCE_HISTORY_COUNT;
+            if (balance_diag_history_count < BALANCE_HISTORY_COUNT)
+                balance_diag_history_count++;
+            history_capture_tick = HAL_GetTick();
+        }
+        if (ready && !balance_diag_standing.valid
+            && vmc_left_s.L_t_mm >= 210.0f && vmc_right_s.L_t_mm >= 210.0f)
+            capture(&balance_diag_standing, torque);
+        if (ready && !balance_diag.valid && bal_pair.common.v_m_s < -0.20f)
+            capture(&balance_diag, torque);
 
-        /* 下发 (限幅为常规输出保护, 达妙同款) */
-        float ta = vmc_left_s.fk_s.tau_a / 1000.0f;
-        float tb = vmc_left_s.fk_s.tau_b / 1000.0f;
-        if (ta >  TORQUE_LIMIT) ta =  TORQUE_LIMIT;
-        if (ta < -TORQUE_LIMIT) ta = -TORQUE_LIMIT;
-        if (tb >  TORQUE_LIMIT) tb =  TORQUE_LIMIT;
-        if (tb < -TORQUE_LIMIT) tb = -TORQUE_LIMIT;
-        Set_LeftOneTorqueMIT(&hfdcan1, &DM8009_Ctrl[0], ta);
-        DM_SendCmd(&hfdcan1, &DM8009_Ctrl[0]);
-        Set_LeftTwoTorqueMIT(&hfdcan1, &DM8009_Ctrl[1], tb);
-        DM_SendCmd(&hfdcan1, &DM8009_Ctrl[1]);
-
-        osDelay(1);
+        next_wake += period;
+        uint32_t now = osKernelGetTickCount();
+        if ((int32_t)(next_wake - now) <= 0)
+        {
+            balance_control_overruns++;
+            next_wake = now + period;
+        }
+        osDelayUntil(next_wake);
     }
 }
 
+/* Retained for source compatibility. freertos.c creates only the paired task. */
 void RLeg_task(void *argument)
 {
-    while (remote_ctrl.rc.ch[1] < 500);   /* 遥控使能闸 */
-
-    DM_8009Motor_Init(&DM8009_Ctrl[2], RightFrontCAN_ID);
-    DM_CtrlStop(&DM8009_Ctrl[2]);
-    DM_8009Motor_Init(&DM8009_Ctrl[3], RightBehindCAN_ID);
-    DM_CtrlStop(&DM8009_Ctrl[3]);
-    DM_Enable(&hfdcan1, &DM8009_Ctrl[2]);
-    DM_Enable(&hfdcan1, &DM8009_Ctrl[3]);
-
-    VMC_init(&vmc_right_s);
-
-    while (1)
-    {
-        float joint_a_angle_rad = -DM8009_Ctrl[2].fb.processed_pos;   /* 镜像: 进运动学前取反 */
-        float joint_b_angle_rad  = -DM8009_Ctrl[3].fb.processed_pos;
-
-        VMC_StateUpdate(&vmc_right_s, joint_a_angle_rad, joint_b_angle_rad, 0.001f);
-
-        if (leg_safety_ok(&DM8009_Ctrl[2], &DM8009_Ctrl[3], &vmc_right_s))
-        {
-            float T_p_antisplit_Nmm = AntiSplit_Loop(vmc_left_s.theta_rel_body_rad,
-                                                     vmc_right_s.theta_rel_body_rad);
-            vmc_right_s.F_roll_N = -Roll_Loop(0.0f, INS.Roll, INS.Gyro[1]);
-
-            float v_wheel_m_s = motor_measure_R.speed_rpm * 0.000327f * WHEEL_V_SIGN_R;
-            Balance_Update(&bal_right, &vmc_right_s, &INS, v_wheel_m_s, 0.001f);
-            vmc_right_s.T_p_Nmm = bal_right.Tp_Nmm + T_p_antisplit_Nmm;
-            VMC_ForceCalc(&vmc_right_s, joint_a_angle_rad, joint_b_angle_rad);
-        }
-        else
-        {
-            vmc_right_s.fk_s.tau_a = vmc_right_s.fk_s.tau_b = 0.0f;
-            vmc_right_s.T_p_Nmm = 0.0f;
-            bal_right.T_Nm = 0.0f;
-            bal_right.Tp_Nmm = 0.0f;
-            bal_right.x_m = 0.0f;
-            vmc_right_s.first_flag = 1;
-        }
-
-        float ta = -vmc_right_s.fk_s.tau_a / 1000.0f;   /* 出运动学后取反 */
-        float tb = -vmc_right_s.fk_s.tau_b / 1000.0f;
-        if (ta >  TORQUE_LIMIT) ta =  TORQUE_LIMIT;
-        if (ta < -TORQUE_LIMIT) ta = -TORQUE_LIMIT;
-        if (tb >  TORQUE_LIMIT) tb =  TORQUE_LIMIT;
-        if (tb < -TORQUE_LIMIT) tb = -TORQUE_LIMIT;
-        Set_RightOneTorqueMIT(&hfdcan1, &DM8009_Ctrl[2], ta);
-        DM_SendCmd(&hfdcan1, &DM8009_Ctrl[2]);
-        Set_RightTwoTorqueMIT(&hfdcan1, &DM8009_Ctrl[3], tb);
-        DM_SendCmd(&hfdcan1, &DM8009_Ctrl[3]);
-
-        osDelay(1);
-    }
+    (void)argument;
+    for (;;) osDelay(1000);
 }
 
-/* 横滚环: Roll 误差 -> 两腿力差 (Roll loop: roll error -> leg force diff)
- * roll_set : 目标横滚角 [rad], 站立 = 0, 压弯时给非零
- * roll     : INS.Roll [rad]
- * roll_gyro: 横滚轴角速度 [rad/s]
- * 返回 ΔF [N], 左腿取正、右腿取负 */
 float Roll_Loop(float roll_set, float roll, float roll_gyro)
 {
-    float out = ROLL_KP * (roll_set - roll) - ROLL_KD * roll_gyro;
-    if (out >  ROLL_MAX_OUT) out =  ROLL_MAX_OUT;
-    if (out < -ROLL_MAX_OUT) out = -ROLL_MAX_OUT;
-    return out;
+    return limited(ROLL_KP * (roll_set - roll) - ROLL_KD * roll_gyro, ROLL_MAX_OUT);
 }
 
-/* 防劈叉环: 两腿夹角差 -> 修正力矩 (Anti-split: leg angle diff -> corrective T_p_Nmm)
- * 返回 K*(theta_rel_body_L_rad - theta_rel_body_R_rad) [N*mm]; 左腿取负、右腿取正
- * 两腿同向一起摆时差=0, 不产生力矩; 前后劈叉时差≠0, 力矩把两腿拉回对称 */
-float AntiSplit_Loop(float theta_rel_body_L_rad, float theta_rel_body_R_rad)
+float AntiSplit_Loop(float theta_left, float theta_right)
 {
-    float out = ANTI_SPLIT_KP * (theta_rel_body_L_rad - theta_rel_body_R_rad);
-    if (out >  ANTI_SPLIT_MAX) out =  ANTI_SPLIT_MAX;
-    if (out < -ANTI_SPLIT_MAX) out = -ANTI_SPLIT_MAX;
-    return out;
+    return limited(ANTI_SPLIT_KP * (theta_left - theta_right), ANTI_SPLIT_MAX);
 }

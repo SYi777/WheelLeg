@@ -30,6 +30,15 @@ typedef struct
 extern motor_measure_t motor_measure_L;   // ×óÂÖ
 extern motor_measure_t motor_measure_R;   // ÓÒÂÖ
 
+/* Diagnostic metadata only; feedback and command retain raw C620 signs. */
+typedef struct
+{
+    int16_t current_cmd_raw[2];
+    uint32_t tx_status, tx_cnt, tx_fail_cnt, last_cmd_tick;
+    uint32_t last_fb_tick[2], rx_cnt[2];
+} wheel_drive_diag_t;
+extern volatile wheel_drive_diag_t wheel_drive_diag;
+
 void WheelTorque_Send(FDCAN_HandleTypeDef *hfdcan, float T_left, float T_right);
 
 #endif

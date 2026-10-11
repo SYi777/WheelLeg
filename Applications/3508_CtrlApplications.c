@@ -1,5 +1,7 @@
 #include "3508_CtrlApplications.h"
 
+volatile wheel_drive_diag_t wheel_drive_diag;
+
 motor_measure_t motor_measure_L;   // ×óÂÖ
 motor_measure_t motor_measure_R;   // ÓÒÂÖ
 
@@ -29,5 +31,14 @@ void WheelTorque_Send(FDCAN_HandleTypeDef *hfdcan, float T_left, float T_right)
     tx_header.FDFormat            = FDCAN_CLASSIC_CAN;
     tx_header.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
     tx_header.MessageMarker       = 0;
-    HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &tx_header, data);
+    wheel_drive_diag.current_cmd_raw[0] = cur[0];
+    wheel_drive_diag.current_cmd_raw[1] = cur[1];
+    HAL_StatusTypeDef status = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &tx_header, data);
+    wheel_drive_diag.tx_status = (uint32_t)status;
+    if (status == HAL_OK)
+    {
+        wheel_drive_diag.tx_cnt++;
+        wheel_drive_diag.last_cmd_tick = HAL_GetTick();
+    }
+    else wheel_drive_diag.tx_fail_cnt++;
 }

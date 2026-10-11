@@ -42,6 +42,7 @@
 //防劈叉环参数
 #define ANTI_SPLIT_KP   30000.0f   /* [N*mm/rad] 两腿夹角差 -> 修正力矩 */
 #define ANTI_SPLIT_MAX  10000.0f
+#define ANTI_SPLIT_KD   2000.0f    /* N*mm*s/rad, initial damping gain */
 
 /* Relation to the single-side dynamics model (X forward, Z up):
  * L_t_mm = 1000 * L_t; the FK point B is the wheel relative to the hip.
@@ -73,6 +74,10 @@ typedef struct
     float theta_rel_body_rad;        // 腿轴与竖直夹角 = leg_axis_angle_rad - π/2 [rad], 站立 = 0
     float L_t_dot_mm_s;         // 腿伸缩速率 [mm/s] (虚拟弹簧阻尼项)
     float theta_rel_body_dot_rad_s;      // 腿轴摆动速率 [rad/s] (= d_leg_axis_angle, 同一量只存一份)
+    float F_spring_N, F_gravity_N; /* Axial-force terms before clipping. */
+    float F_axis_applied_N, T_p_applied_Nmm; /* Feasible allocated polar command. */
+    float tau_request_a_Nm, tau_request_b_Nm; /* Before torque allocation. */
+    uint8_t axis_force_limited, hip_moment_limited;
     float last_L_t_mm;
     float last_leg_axis_angle_rad;
     uint8_t first_flag; // 首周期用当前值初始化 last_*, 防止差分算出 dt 尖峰
@@ -80,7 +85,7 @@ typedef struct
     /* ---- 力链中间量 (ForceCalc 每周期算, 仅调试观测) ---- */
     /* Force-chain intermediates (debug observables) */
     float F_axis_N;           // 期望沿腿轴力 [N] = Kp·(L_t_set_mm-L_t_mm) + Kd·(0-L_t_dot_mm_s)
-                        // + F_roll_N; gravity feedforward is disabled.
+                        // + MASS_HALF_G/cos(theta_rel_body_rad) + F_roll_N.
     float F_tangent_N;           // 切向力 [N] = T_p_Nmm/L_t_mm (沿 n0)
     float F_fk_x_N, F_fk_y_N;       // 直角坐标力 [N] (模块内部量, 控制层勿用)
                         // Cartesian force (internal only, not for control layer)
@@ -100,7 +105,10 @@ void VMC_init(vmc_t *vmc);
 
 void VMC_StateUpdate(vmc_t *vmc, float joint_a_angle_rad, float joint_b_angle_rad, float dt);
 
+void VMC_StateUpdateWithVelocity(vmc_t *vmc, float qa, float qb,
+                                  float dqa, float dqb, float dt);
 void VMC_ForceCalc(vmc_t *vmc, float joint_a_angle_rad, float joint_b_angle_rad);
+void VMC_TorqueAllocate(vmc_t *vmc, float torque_limit_Nm);
 
 /* 力坐标变换: 极坐标 (F_axis_N,T_p_Nmm) <-> 直角坐标 (F_fk_x_N,F_fk_y_N), 与 B 同坐标系。
  * Force transform: polar (F_axis_N,T_p_Nmm) <-> Cartesian (F_fk_x_N,F_fk_y_N), same frame as B.

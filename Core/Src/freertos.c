@@ -56,17 +56,12 @@ const osThreadAttr_t INSTask_attributes = {
 
 osThreadId_t LLegTaskHandle;
 const osThreadAttr_t LLegTask_attributes = {
-	.name = "Leg_Tasks",
-	.stack_size = 2048,
+	.name = "Balance_pair",
+	.stack_size = 4096,
 	.priority = (osPriority_t) osPriorityHigh,
 };
 
-osThreadId_t RLegTaskHandle;
-const osThreadAttr_t RLegTask_attributes = {
-	.name = "Leg_Tasks",
-	.stack_size = 2048,
-	.priority = (osPriority_t) osPriorityHigh,
-};
+/* Both legs are controlled by LLegTaskHandle in one 1 ms frame. */
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -119,7 +114,7 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
   INSTaskHandle = osThreadNew(INS_task , NULL, &INSTask_attributes);
   LLegTaskHandle = osThreadNew(LLeg_task, NULL, &LLegTask_attributes);
-  RLegTaskHandle = osThreadNew(RLeg_task, NULL, &RLegTask_attributes);
+  /* The paired control task owns all leg and wheel commands. */
   /* USER CODE END RTOS_THREADS */
 
   /* USER CODE BEGIN RTOS_EVENTS */
@@ -151,13 +146,17 @@ void StartDefaultTask(void *argument)
 void INS_task(void *argument)
 {
 	INS_Init();
-	TickType_t xLastWakeTime = osKernelGetTickCount();
-    const TickType_t xPeriod = osKernelGetTickFreq() / 1000;
-	while(1)
-	{
-		INS_Task();
-		osDelayUntil(xPeriod);
-	}
+    uint32_t next_wake = osKernelGetTickCount();
+    uint32_t period = osKernelGetTickFreq() / 1000U;
+    if (period == 0U) period = 1U;
+    while (1)
+    {
+        INS_Task();
+        next_wake += period;
+        if ((int32_t)(next_wake - osKernelGetTickCount()) <= 0)
+            next_wake = osKernelGetTickCount() + period;
+        osDelayUntil(next_wake);
+    }
 }
 /* USER CODE END Application */
 
