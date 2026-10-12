@@ -1,3 +1,10 @@
+/**
+*@file struct_typedef.h
+*@brief 项目常用基本类型别名
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date
+**/
 #ifndef STRUCT_TYPEDEF_H
 #define STRUCT_TYPEDEF_H
 

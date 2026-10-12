@@ -1,3 +1,12 @@
+/**
+*@file balance.h
+*@brief 单腿 LQR 平衡参数、状态与接口声明
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date 2026/10/11
+*
+*状态顺序为 theta、theta_dot、x、x_dot、phi、phi_dot。
+**/
 #ifndef __BALANCE_H
 #define __BALANCE_H
 #include "main.h"
@@ -38,8 +47,7 @@ typedef struct
     float v_L_m_s, v_R_m_s;          /* 单轮速度 (差速阻尼用) */
 } balance_shared_t;
 
-float Balance_WheelVelocity(float rpm, float rpm_sign, const vmc_t *vmc,
-                            const INS_t *ins);
+float Balance_WheelVelocity(float rpm, float rpm_sign);
 void Balance_SharedUpdate(balance_shared_t *sh, float rpm_left, float rpm_right,
                           float dt);
 void Balance_Update(balance_t *bal, const balance_shared_t *sh,

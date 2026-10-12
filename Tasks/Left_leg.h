@@ -1,3 +1,10 @@
+/**
+*@file Left_leg.h
+*@brief 左腿控制结构体与 PID 参数
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date
+**/
 #ifndef __LEFT_LEG_H
 #define __LEFT_LEG_H
 #include "8009_CtrlApplications.h"

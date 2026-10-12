@@ -1,3 +1,12 @@
+/**
+*@file 3508_CtrlApplications.h
+*@brief C620轮电机控制帧与反馈数据接口
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date
+*
+*控制帧 CAN ID 0x200；左、右轮反馈 ID 分别为 0x201、0x202。
+**/
 #ifndef __3508_CTRLAPPLICATIONS_H
 #define __3508_CTRLAPPLICATIONS_H
 

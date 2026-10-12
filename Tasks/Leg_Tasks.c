@@ -1,3 +1,12 @@
+/**
+*@file Leg_Tasks.c
+*@brief 左右腿控制任务与电机输出
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date 2026/10/10
+*
+*左腿任务更新共享轮速和位移，右腿任务读取共享状态。
+**/
 #include "Leg_Tasks.h"
 #include "VMC.h"
 #include "3508_CtrlApplications.h"
@@ -12,18 +21,27 @@ extern vmc_t vmc_left_s, vmc_right_s;
 balance_t bal_left, bal_right;
 balance_shared_t bal_sh;
 
-// 电机掉线检查
+FKResult l;
+
+// 安全判断暂时固定返回 0，原检查条件留在函数内待恢复
 static int leg_safety_ok(const DM_Motor *m0, const DM_Motor *m1, const vmc_t *vmc)
 {
     uint32_t now = HAL_GetTick();
-    return m0->online && m1->online && m0->fb.enabled && m1->fb.enabled
-        && !m0->fb.fault && !m1->fb.fault
-        && now - m0->last_fb_tick <= DM_COMM_TIMEOUT_MS
-        && now - m1->last_fb_tick <= DM_COMM_TIMEOUT_MS
-        && vmc->fk_s.fk.status == FK_OK && vmc->fk_s.jac_ok;
+    // return m0->online && m1->online && m0->fb.enabled && m1->fb.enabled
+    //     && !m0->fb.fault && !m1->fb.fault
+    //     && now - m0->last_fb_tick <= DM_COMM_TIMEOUT_MS
+    //     && now - m1->last_fb_tick <= DM_COMM_TIMEOUT_MS
+    //     && vmc->fk_s.fk.status == FK_OK && vmc->fk_s.jac_ok;
+	return 0;
 }
 
-// 左腿任务
+/**
+ * @brief  运行左腿 1 ms 平衡与电机输出任务
+ * @param  argument  未使用的 RTOS 任务参数
+ * @return 无，任务持续循环
+ *
+ * 安全判断通过时更新共享轮速位移，计算本腿 LQR、横滚与防劈叉补偿，并下发两轮力矩。
+ */
 void LLeg_task(void *argument)
 {
     osDelay(5000);
@@ -80,7 +98,7 @@ void LLeg_task(void *argument)
 
             // 力段: J^T F -> 关节力矩
             VMC_ForceCalc(&vmc_left_s, fb0.processed_pos, fb1.processed_pos);
-            ta = vmc_left_s.fk_s.tau_a / 1000.0f;   /* N·mm -> N·m */
+            ta = vmc_left_s.fk_s.tau_a / 1000.0f;   // N·mm -> N·m
             tb = vmc_left_s.fk_s.tau_b / 1000.0f;
         }
         else
@@ -120,15 +138,23 @@ void LLeg_task(void *argument)
             WheelTorque_Send(&hfdcan2, 0.0f, 0.0f);
         }
 
-        //任务周期维持
+        // 维持任务周期
         next_wake += period;
         if ((int32_t)(next_wake - osKernelGetTickCount()) <= 0)
             next_wake = osKernelGetTickCount() + period;
         osDelayUntil(next_wake);
+
+		l = fivebar_fk( fb0.processed_pos, fb1.processed_pos);
     }
 }
 
-// 右腿任务
+/**
+ * @brief  运行右腿 1 ms 平衡与电机输出任务
+ * @param  argument  未使用的 RTOS 任务参数
+ * @return 无，任务持续循环
+ *
+ * 安全判断通过时执行平衡控制；右腿反馈进入运动学前取反，关节力矩输出后再取反。
+ */
 void RLeg_task(void *argument)
 {
     osDelay(5000);
@@ -210,7 +236,7 @@ void RLeg_task(void *argument)
     }
 }
 
-// 横滚环: roll 误差 -> 两腿力差 [N], 左正右负
+// 根据横滚角和角速度计算左右腿力差
 float Roll_Loop(float roll_set, float roll, float roll_gyro)
 {
     float out = ROLL_KP * (roll_set - roll) - ROLL_KD * roll_gyro;
@@ -219,7 +245,7 @@ float Roll_Loop(float roll_set, float roll, float roll_gyro)
     return out;
 }
 
-// 防劈叉: 两腿夹角差 -> 修正力矩 [N·mm], 左减右加
+// 根据左右腿角度差计算防劈叉修正力矩
 float AntiSplit_Loop(float theta_left, float theta_right)
 {
     float out = ANTI_SPLIT_KP * (theta_left - theta_right);

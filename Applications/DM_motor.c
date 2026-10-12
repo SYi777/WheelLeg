@@ -11,6 +11,14 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+/**
+ * @brief  解析 FDCAN FIFO0 中的髋电机与轮电机反馈
+ * @param  hfdcan  触发接收回调的 CAN 句柄
+ * @param  RxFifo0ITs  FIFO0 中断事件标志
+ * @return 无
+ *
+ * 根据反馈帧 ID 更新对应电机状态与接收计数。
+ */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
     if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE)
@@ -20,31 +28,31 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
         
         while (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
         {
-            //根据反馈ID匹配电机（J8009反馈ID = 0x10 + 电机ID）
+            // 根据反馈 ID 匹配电机（J8009 反馈 ID = 0x10 + 电机 ID）
             switch(RxHeader.Identifier)
             {
-                case 0x11: //左前电机（ID=1）
+                case 0x11: // 左前电机（ID=1）
                     DM_UnpackFb(RxData, &DM8009_Ctrl[0].fb);
                     DM8009_Ctrl[0].online = 1;
                     DM8009_Ctrl[0].last_fb_tick = HAL_GetTick();
                     DM8009_Ctrl[0].rx_cnt++;
                     break;
                     
-                case 0x12: //左后电机（ID=2）
+                case 0x12: // 左后电机（ID=2）
                     DM_UnpackFb(RxData, &DM8009_Ctrl[1].fb);
                     DM8009_Ctrl[1].online = 1;
                     DM8009_Ctrl[1].last_fb_tick = HAL_GetTick();
                     DM8009_Ctrl[1].rx_cnt++;
                     break;
                     
-                case 0x13: //右前电机（ID=3）
+                case 0x13: // 右前电机（ID=3）
                     DM_UnpackFb(RxData, &DM8009_Ctrl[2].fb);
                     DM8009_Ctrl[2].online = 1;
                     DM8009_Ctrl[2].last_fb_tick = HAL_GetTick();
                     DM8009_Ctrl[2].rx_cnt++;
                     break;
                     
-                case 0x14: //右后电机（ID=4）
+                case 0x14: // 右后电机（ID=4）
                     DM_UnpackFb(RxData, &DM8009_Ctrl[3].fb);
                     DM8009_Ctrl[3].online = 1;
                     DM8009_Ctrl[3].last_fb_tick = HAL_GetTick();
@@ -69,7 +77,12 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
         }
     }
 }
-//MIT命令打包
+/**
+ * @brief  将 DM 电机 MIT 指令打包成 8 字节控制帧
+ * @param  cmd  已量化的 MIT 控制指令
+ * @param  data  输出的 8 字节 CAN 数据
+ * @return 无
+ */
 void DM_PackMITCmd(const DM_Command *cmd, uint8_t data[8])
 {
     uint16_t p  = cmd->p_des;
@@ -98,7 +111,14 @@ void DM_PackMITCmd(const DM_Command *cmd, uint8_t data[8])
     // D7 = t_ff[7:0]
     data[7] = t & 0xFF;
 }
-//解包
+/**
+ * @brief  解析 DM 电机的 8 字节反馈帧
+ * @param  data  收到的 8 字节 CAN 数据
+ * @param  fb  输出的电机反馈状态
+ * @return 无
+ *
+ * 位置换算后的 processed_pos 归算到非负角度。
+ */
 void DM_UnpackFb(const uint8_t data[8], DM_state *fb)
 {
     fb->motor_id = data[0] & 0x0F;
@@ -127,7 +147,12 @@ void DM_UnpackFb(const uint8_t data[8], DM_state *fb)
 		fb->processed_pos = fb->position;
 	}
 }
-// 控制帧发送函数，返回发送状态
+/**
+ * @brief  发送一台 DM 电机的 MIT 控制帧并记录发送状态
+ * @param  hfdcan  髋电机 CAN 句柄
+ * @param  m  目标电机对象
+ * @return HAL 发送状态
+ */
 HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 {
 	FDCAN_TxHeaderTypeDef tx_header;
@@ -154,7 +179,13 @@ HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 	m->last_tx_status = st;
 	return st;
 }
-//系统命令帧发送函数
+/**
+ * @brief  发送一台 DM 电机的系统命令帧
+ * @param  hfdcan  髋电机 CAN 句柄
+ * @param  m  目标电机对象
+ * @param  data  8 字节系统命令
+ * @return HAL 发送状态
+ */
 static HAL_StatusTypeDef DM_SendSysCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m,const uint8_t data[8])
 {
     FDCAN_TxHeaderTypeDef tx_header = {0};
@@ -173,7 +204,7 @@ static HAL_StatusTypeDef DM_SendSysCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m,
     taskEXIT_CRITICAL();
     return st;
 }
-//使能电机
+// 发送电机使能帧并记录发送状态
 HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 {
     uint8_t data[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
@@ -181,13 +212,22 @@ HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
     m->last_tx_status = st;
     return st;
 }
-//失能电机
+// 发送电机失能帧
 void DM_Disable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 {
     uint8_t data[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
     DM_SendSysCmd(hfdcan, m, data);
 }
-//MIT
+/**
+ * @brief  限制并量化 MIT 位置、速度、增益和前馈力矩
+ * @param  m  目标电机对象
+ * @param  pos  目标位置 [rad]
+ * @param  vel  目标速度 [rad/s]
+ * @param  kp  位置增益
+ * @param  kd  速度增益
+ * @param  t_ff  前馈力矩 [N*m]
+ * @return 无
+ */
 void DM_MITCtrl(DM_Motor *m, float pos, float vel, float kp, float kd, float t_ff)
 {
     if (kp < DM_KP_MIN) kp = DM_KP_MIN;
@@ -203,7 +243,7 @@ void DM_MITCtrl(DM_Motor *m, float pos, float vel, float kp, float kd, float t_f
     m->cmd.kd = float_to_uint(kd, DM_KD_MIN, DM_KD_MAX, 12);
     m->cmd.t_ff = float_to_uint(t_ff, DM_TOR_MIN, DM_TOR_MAX, 12);
 }
-//停转
+// 将 MIT 控制指令置为零位置、零速度和零力矩
 void DM_CtrlStop(DM_Motor *m)
 {
     m->cmd.p_des = float_to_uint(0.0f, DM_POS_MIN, DM_POS_MAX, 16);

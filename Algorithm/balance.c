@@ -1,72 +1,108 @@
+/**
+*@file balance.c
+*@brief 单腿连续 LQR 平衡状态与力矩计算
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date 2026/10/11
+*
+*左右腿分别计算角度状态，轮速和位移由左腿任务共享。
+**/
 #include "balance.h"
 #include <string.h>
 
-/* 单侧纵向 LQR 增益 K: 每条腿用各自的 theta/theta_dot 加共享的 x/v.
- * Q=diag(10,1,50,10,800,1), R=diag(20,1); u_model=-K*e.
- * 双轮反向(差速)运动需要自己的阻尼, 不属于这个 LQR 模型. */
+// 单侧连续 LQR: 各腿使用自己的 theta/theta_dot，共享车轮 x/v
+// Q=diag(10,1,50,10,800,1)，R=diag(20,1)，模型输出 u=-K*e
 static const float K[2][6] = {
     {-9.4389f, -1.2684f, -1.3967f, -1.6995f, 4.7310f, 0.8119f},
     {14.3380f,  2.1396f,  3.3143f,  3.7405f,25.7565f, 2.2509f}
 };
 
-static float limit(float value, float bound)
+// 将轮电机 RPM 近似换算为轮心线速度
+float Balance_WheelVelocity(float rpm, float rpm_sign)
 {
-    if (value > bound) return bound;
-    if (value < -bound) return -bound;
-    return value;
-}
-
-float Balance_WheelVelocity(float rpm, float rpm_sign, const vmc_t *vmc,
-                            const INS_t *ins)
-{
-    /* FK 回路是传动等效, 不是真实连杆布局.
-     * 定子(车身)也在动时, 相对转子 RPM 只是轮世界速度的近似.
-     * 动力学里的 x 是轮心位置, 不是髋位置. */
-    (void)vmc;
-    (void)ins;
     return rpm * WHEEL_RPM_TO_M_S * rpm_sign;
 }
 
+/**
+ * @brief  更新左右轮共享速度与轮心位移
+ * @param  sh  左右腿共享的轮速和位移状态
+ * @param  rpm_left  左轮转速 [RPM]
+ * @param  rpm_right  右轮转速 [RPM]
+ * @param  dt  本次控制周期 [s]
+ * @return 无
+ *
+ * 仅左腿任务调用，右腿任务读取更新结果。
+ */
 void Balance_SharedUpdate(balance_shared_t *sh, float rpm_left, float rpm_right,
                           float dt)
 {
-    /* 整车共享 x/v: 单积分器, 由左腿任务独占调用, 右腿任务只读 */
-    sh->v_L_m_s = Balance_WheelVelocity(rpm_left, WHEEL_V_SIGN_L, 0, 0);
-    sh->v_R_m_s = Balance_WheelVelocity(rpm_right, WHEEL_V_SIGN_R, 0, 0);
+    sh->v_L_m_s = Balance_WheelVelocity(rpm_left, WHEEL_V_SIGN_L);
+    sh->v_R_m_s = Balance_WheelVelocity(rpm_right, WHEEL_V_SIGN_R);
     sh->v_m_s = 0.5f * (sh->v_L_m_s + sh->v_R_m_s);
-    /* x 是实测位移的单积分, 不是执行器积分器.
-     * 钳位 x 会破坏 x_dot=v, 并隐藏 LQR 视角下的持续平移.
-     * 指令饱和在下面做; 控制复位时原点清零. */
+
+    // x 为轮心位移的积分，保持 x_dot=v；控制复位时清零原点
     sh->x_m += sh->v_m_s * dt;
 }
 
+// 清零本腿平衡状态
 void Balance_Reset(balance_t *bal)
 {
     memset(bal, 0, sizeof(*bal));
 }
 
+/**
+ * @brief  按本腿角度及共享轮速计算连续 LQR 力矩
+ * @param  bal  输出的本腿平衡状态与力矩
+ * @param  sh  左右腿共享的轮速和位移
+ * @param  vmc  本腿 VMC 状态
+ * @param  ins  机身姿态与角速度
+ * @return 无
+ *
+ * 状态顺序为 theta、theta_dot、x、x_dot、phi、phi_dot；轮输出为 N*m，髋输出为 N*mm。
+ */
 void Balance_Update(balance_t *bal, const balance_shared_t *sh,
                     const vmc_t *vmc, const INS_t *ins)
 {
-    /* 每腿独立角度 + 共享 x/v + 共享机身姿态 */
+    // 机身姿态与腿角；FK 局部 +x 朝车头、+y 朝下
     bal->phi_rad = LQR_PITCH_SIGN * ins->Pitch;
     bal->dphi_rad_s = LQR_PITCH_SIGN * ins->Gyro[PITCH_GYRO_AXIS];
-    /* FK 局部 +x 朝车头、+y 朝下；模型 theta 是世界系 W->H 的前倾角。 */
     bal->theta_rad = LQR_LEG_SIGN * vmc->theta_rel_body_rad - bal->phi_rad;
     bal->dtheta_rad_s = LQR_LEG_SIGN * vmc->theta_rel_body_dot_rad_s - bal->dphi_rad_s;
+
+    // 两腿共用轮心位移和平均轮速
     bal->x_m = sh->x_m;
     bal->v_m_s = sh->v_m_s;
 
-    float e[6] = {bal->theta_rad - THETA_E_RAD, bal->dtheta_rad_s,
-                  sh->x_m, sh->v_m_s, bal->phi_rad, bal->dphi_rad_s};
-    float T = 0.0f, Tp = 0.0f;
-    for (int j = 0; j < 6; ++j)
+    // 状态误差顺序: theta, theta_dot, x, x_dot, phi, phi_dot
+    float state_error[6] = {
+        bal->theta_rad - THETA_E_RAD,
+        bal->dtheta_rad_s,
+        bal->x_m,
+        bal->v_m_s,
+        bal->phi_rad,
+        bal->dphi_rad_s,
+    };
+
+    // 连续 LQR: 第一行轮力矩，第二行髋力矩，单位均为 N*m
+    float wheel_torque_Nm = 0.0f;
+    float hip_torque_Nm = 0.0f;
+    for (int j = 0; j < 6; j++)
     {
-        T  -= K[0][j] * e[j];
-        Tp -= K[1][j] * e[j];
+        wheel_torque_Nm -= K[0][j] * state_error[j];
+        hip_torque_Nm -= K[1][j] * state_error[j];
     }
-    T  = LQR_WHEEL_SIGN * T;
-    Tp = LQR_TP_SIGN * Tp;
-    bal->T_Nm   = limit(T, LQR_T_LIMIT_NM);
-    bal->Tp_Nmm = limit(Tp * 1000.0f, LQR_TP_LIMIT_NMM);
+
+    // 模型力矩转驱动方向，再分别限幅
+    wheel_torque_Nm *= LQR_WHEEL_SIGN;
+    hip_torque_Nm *= LQR_TP_SIGN;
+    if (wheel_torque_Nm >  LQR_T_LIMIT_NM) wheel_torque_Nm =  LQR_T_LIMIT_NM;
+    if (wheel_torque_Nm < -LQR_T_LIMIT_NM) wheel_torque_Nm = -LQR_T_LIMIT_NM;
+
+    // VMC 髋力矩使用 N*mm
+    float hip_torque_Nmm = hip_torque_Nm * 1000.0f;
+    if (hip_torque_Nmm >  LQR_TP_LIMIT_NMM) hip_torque_Nmm =  LQR_TP_LIMIT_NMM;
+    if (hip_torque_Nmm < -LQR_TP_LIMIT_NMM) hip_torque_Nmm = -LQR_TP_LIMIT_NMM;
+
+    bal->T_Nm = wheel_torque_Nm;
+    bal->Tp_Nmm = hip_torque_Nmm;
 }

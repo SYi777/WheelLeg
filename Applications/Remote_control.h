@@ -1,3 +1,12 @@
+/**
+*@file Remote_control.h
+*@brief 遥控器 SBUS 数据结构与接口声明
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date
+*
+*遥控器接收与解析实现在 Remote_control.c。
+**/
 #ifndef REMOTE_CONTROL_H
 #define REMOTE_CONTROL_H
 #include "struct_typedef.h"

@@ -1,3 +1,10 @@
+/**
+*@file Leg_Tasks.h
+*@brief 左右腿控制任务及横滚、防劈叉接口
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date 2026/9/30
+**/
 #ifndef __LEG_TASKS_H
 #define __LEG_TASKS_H
 #include "8009_CtrlApplications.h"
