@@ -69,7 +69,7 @@ static bool tri_angle(float a, float b, float c, float *phi) {
  *  fivebar_ik — 逆运动学核心
  * ==================================================================== */
 IKResult fivebar_ik(float xb, float yb) {
-    IKResult ik = {0};
+    IKResult ik = {IK_OK, 0.0f, 0.0f, {0.0f, 0.0f}, false};
     const float pi = 3.141592653589793f;
 
     /* ---- Step 1: B 极坐标 ---- */
@@ -80,7 +80,7 @@ IKResult fivebar_ik(float xb, float yb) {
     }
     float psi = fatan2(yb, xb);
 
-    /* ---- Step 2: 余弦定理求 φ?, φ? ---- */
+    /* ---- Step 2: 余弦定理求 phi1 和 phi2 ---- */
     float phi1, phi2;
     if (!tri_angle(L1, Rob, L3, &phi1) ||
         !tri_angle(L2, Rob, L4, &phi2)) {

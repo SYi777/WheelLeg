@@ -19,14 +19,14 @@
  *
  * ─── 角度定义 (所有角度以逆时针为正, 参考轴为 +X) ───
  *
- *   α  (alpha) : 输入杆 OA 的转角, 从 +X 轴逆时针量至 OA
- *   β  (beta)  : 输入杆 OC 的转角, 从 +X 轴逆时针量至 OC
- *   θ1 (theta1): 从动杆 AB 的全局绝对角, 从 +X 轴逆时针量至 AB, 范围 [0, 2π)
- *   θ2 (theta2): 从动杆 CB 的全局绝对角, 从 +X 轴逆时针量至 CB, 范围 [0, 2π)
- *   Δθ_input   : 主动杆相对夹角, 归算到 [0, π], 用于主动侧限位
- *   Δθ_passive : 从动杆相对夹角, 归算到 [0, π], 用于从动侧干涉判断
+ *   alpha       : 输入杆 OA 的转角, 从 +X 轴逆时针量至 OA
+ *   beta        : 输入杆 OC 的转角, 从 +X 轴逆时针量至 OC
+ *   th1         : 从动杆 AB 的全局绝对角, 从 +X 轴逆时针量至 AB, 范围 [0, 2*pi)
+ *   th2         : 从动杆 CB 的全局绝对角, 从 +X 轴逆时针量至 CB, 范围 [0, 2*pi)
+ *   delta_input : 主动杆相对夹角, 归算到 [0, pi], 用于主动侧限位
+ *   delta_passive: 从动杆相对夹角, 归算到 [0, pi], 用于从动侧干涉判断
  *
- *   坐标系: O = (0,0),  X 轴向右为正,  Y 轴向上为正
+ *   坐标系: 从车辆左侧看，车头在画面左边；O=(0,0)，+X 朝车头（画面左），+Y 朝下
  */
 
 #ifndef FORWARD_SOLUTION_H
@@ -51,7 +51,7 @@ extern "C" {
  *  限位约束 (rad)
  * ==================================================================== */
 #define DELTA_MIN   ( 15.0f * 0.01745329252f)   /*  15° — 避免连杆折叠 */
-#define DELTA_MAX   (170.0f * 0.01745329252f)   /* 165° — 避免奇异   */
+#define DELTA_MAX   (175.0f * 0.01745329252f)   /* 165° — 避免奇异   */
 #define EPS          1e-6f
 
 /* ====================================================================
@@ -69,7 +69,7 @@ typedef struct { float x, y; } Point2D;
 typedef enum {
     FK_OK = 0,
     FK_NO_SOLUTION,         /* 两圆无交点, 连杆无法到达              */
-    FK_OUT_OF_RANGE,        /* 主动杆/从动杆夹角超出 [Δmin, Δmax]   */
+    FK_OUT_OF_RANGE,        /* 主动杆/从动杆夹角超出设定范围     */
     FK_SINGULARITY,         /* A 与 C 重合 或 方程退化              */
 } FKStatus;
 
@@ -77,10 +77,10 @@ typedef struct {
     Point2D A;
     Point2D C;
     Point2D B;
-    float th1;              /* 从动杆 AB 全局绝对角 [0, 2π)        */
-    float th2;              /* 从动杆 CB 全局绝对角 [0, 2π)        */
-    float delta_input;      /* 主动杆相对夹角 [0, π]               */
-    float delta_passive;    /* 从动杆相对夹角 [0, π] — 干涉判断用   */
+    float th1;              /* 从动杆 AB 全局绝对角 [0, 2*pi)     */
+    float th2;              /* 从动杆 CB 全局绝对角 [0, 2*pi)     */
+    float delta_input;      /* 主动杆相对夹角 [0, pi]             */
+    float delta_passive;    /* 从动杆相对夹角 [0, pi]，干涉判断用 */
     FKStatus status;
 } FKResult;
 

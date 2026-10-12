@@ -5,43 +5,30 @@
  * @Email   jyh1621839418@163.com
  * @Date    2026-6-17
  *
- * 逆解公式
+ * 逆解公式 (L1～L4 与坐标均使用 mm，角度使用 rad)
  *
- *   已知 B(xb, yb):
+ *   已知目标轮心 B=(xb, yb):
+ *     Rob = sqrt(xb*xb + yb*yb)
+ *     psi = atan2(yb, xb)
  *
- *     Rob = √(xb2 + yb2)
- *     ψ   = atan2(yb, xb)
+ *   用三角 OAB、OCB 的余弦定理:
+ *     phi1 = acos((L1*L1 + Rob*Rob - L3*L3)/(2*L1*Rob))
+ *     phi2 = acos((L2*L2 + Rob*Rob - L4*L4)/(2*L2*Rob))
  *
- *             l12 + Rob2 ? l32
- *     φ? = ──────────────────              (三角 OAB)
- *               2 · l1 · Rob
+ *   两个输入角各有两个候选:
+ *     alpha = wrap_pos(psi + phi1) 或 wrap_pos(psi - phi1)
+ *     beta  = wrap_pos(psi + phi2) 或 wrap_pos(psi - phi2)
+ *   因此最多有四组 (alpha, beta) 候选。
  *
- *             l22 + Rob2 ? l42
- *     φ? = ──────────────────              (三角 OCB)
- *               2 · l2 · Rob
+ *   候选筛选顺序与 fivebar_ik 实现一致:
+ *   1) da=wrap(alpha-psi), db=wrap(beta-psi)。若 da、db 同号则淘汰。
+ *   2) cross_oa_oc=A.x*C.y-A.y*C.x=L1*L2*sin(beta-alpha)。
+ *      按 ASSEMBLY_MODE 所需的叉积符号选择装配解。
+ *   3) 用 fivebar_fk(alpha,beta) 验证末端坐标:
+ *      dx=fk.B.x-xb, dy=fk.B.y-yb;
+ *      dx*dx+dy*dy <= IK_POS_TOL*IK_POS_TOL。
  *
- *     α = ψ ± φ?       (＋→ A 在 OB 左侧,  ?→ A 在 OB 右侧)
- *     β = ψ ± φ?       (＋→ C 在 OB 左侧,  ?→ C 在 OB 右侧)
- *
- *     4 种组合:  A左C左 / A左C右 / A右C左 / A右C右
- *
- * ─── 判据 (4 → 2 → 1) ───
- *
- *   ① theta 相对值判同侧
- *      δα = α ? ψ = ±φ?,   δβ = β ? ψ = ±φ?
- *      δα 与 δβ 同号 → A,C 在 OB 同侧 → 淘汰
- *      → 筛掉 A左C左、A右C右, 保留 A左C右、A右C左
- *
- *   ② OA×OC 叉乘判交换
- *      OA×OC = l1·l2·sin(β?α)
- *      交换解 (A左C右 ? A右C左): β?α 反号 → 叉乘反号
- *      装配模式定符号, 异号者淘汰 → 唯一定解
- *
- *   ③ 正解闭环验证
- *      fivebar_fk(α,β).status == FK_OK
- *      |B_fk ? B_target| < EPS
- *
- *   坐标系: O=(0,0), X→右, Y→上, 角度逆时针为正
+ *   坐标系: 从车辆左侧看，车头在画面左边；O=(0,0)，+X 朝车头（画面左），+Y 朝下，角度逆时针为正
  */
 
 #ifndef INVERSE_SOLUTION_H

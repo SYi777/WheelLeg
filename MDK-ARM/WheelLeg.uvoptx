@@ -160,6 +160,16 @@
           <WinNumber>1</WinNumber>
           <ItemText>balance_diag_latest</ItemText>
         </Ww>
+        <Ww>
+          <count>1</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>balance_diag_history[(balance_diag_history_next + 107) % 128]</ItemText>
+        </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>INS</ItemText>
+        </Ww>
       </WatchWindow1>
       <Tracepoint>
         <THDelay>0</THDelay>

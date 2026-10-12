@@ -56,7 +56,14 @@ const osThreadAttr_t INSTask_attributes = {
 
 osThreadId_t LLegTaskHandle;
 const osThreadAttr_t LLegTask_attributes = {
-	.name = "Balance_pair",
+	.name = "Balance_L",
+	.stack_size = 4096,
+	.priority = (osPriority_t) osPriorityHigh,
+};
+
+osThreadId_t RLegTaskHandle;
+const osThreadAttr_t RLegTask_attributes = {
+	.name = "Balance_R",
 	.stack_size = 4096,
 	.priority = (osPriority_t) osPriorityHigh,
 };
@@ -114,6 +121,7 @@ void MX_FREERTOS_Init(void) {
   /* add threads, ... */
   INSTaskHandle = osThreadNew(INS_task , NULL, &INSTask_attributes);
   LLegTaskHandle = osThreadNew(LLeg_task, NULL, &LLegTask_attributes);
+  RLegTaskHandle = osThreadNew(RLeg_task, NULL, &RLegTask_attributes);
   /* The paired control task owns all leg and wheel commands. */
   /* USER CODE END RTOS_THREADS */
 

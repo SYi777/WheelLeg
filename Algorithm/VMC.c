@@ -11,20 +11,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <float.h>
-#define USE_ARM_DSP
-
-//数学加速
-#ifdef USE_ARM_DSP
-# include "arm_math.h"
-static float fsin(float x)  { return arm_sin_f32(x); }
-static float fcos(float x)  { return arm_cos_f32(x); }
-#else
-static float fsin(float x)  { return sinf(x); }
-static float fcos(float x)  { return cosf(x); }
-#endif
-
-static float fatan2(float y, float x) { return atan2f(y, x); }
-static float fsqrt(float x)           { return sqrtf(x); }
 
 vmc_t vmc_left_s;
 vmc_t vmc_right_s;
@@ -35,8 +21,6 @@ void VMC_init(vmc_t *vmc)
     vmc->first_flag = 1;
     vmc->F_axis_N = 0.0f;
     vmc->T_p_Nmm = 0.0f;
-    vmc->F_axis_applied_N = vmc->T_p_applied_Nmm = 0.0f;
-    vmc->axis_force_limited = vmc->hip_moment_limited = 0U;
     vmc->fk_s.fk.status = FK_NO_SOLUTION;
 }
 
@@ -54,6 +38,7 @@ void VMC_StateUpdate(vmc_t *vmc, float joint_a_angle_rad, float joint_b_angle_ra
 	float by = vmc->fk_s.fk.B.y;
 	
 	vmc->L_t_mm    = sqrtf(bx*bx + by*by);
+	/* FK: +x 朝车头，+y 朝下；B=(0,+L_t) 时腿竖直向下。 */
 	vmc->leg_axis_angle_rad  = atan2(by, bx);
 	vmc->theta_rel_body_rad = vmc->leg_axis_angle_rad - PI/2;
 	
@@ -70,7 +55,7 @@ void VMC_StateUpdate(vmc_t *vmc, float joint_a_angle_rad, float joint_b_angle_ra
     vmc->last_leg_axis_angle_rad = vmc->leg_axis_angle_rad;
 }
 
-/* Use velocity feedback to avoid 0/spike rates when CAN positions repeat. */
+// 利用雅各比矩阵通过电机反馈速度计算末端轮心速度
 void VMC_StateUpdateWithVelocity(vmc_t *vmc, float qa, float qb,
                                   float dqa, float dqb, float dt)
 {
@@ -98,8 +83,6 @@ void VMC_ForceCalc(vmc_t *vmc, float joint_a_angle_rad, float joint_b_angle_rad)
 	
 	float F_spring = VMC_KP * (vmc->L_t_set_mm - vmc->L_t_mm) + VMC_KD * (0.0F - vmc->L_t_dot_mm_s);
 	float F_gravity = MASS_HALF_G / cosf(vmc->theta_rel_body_rad);
-	vmc->F_spring_N = F_spring;
-    vmc->F_gravity_N = F_gravity;
     vmc->F_axis_N = F_spring + F_gravity + vmc->F_roll_N;
 	if(vmc->F_axis_N > VMC_F_AXIS_MAX_N)
 	{
@@ -119,7 +102,6 @@ void VMC_ForceCalc(vmc_t *vmc, float joint_a_angle_rad, float joint_b_angle_rad)
 	if(vmc->fk_s.jac_ok)
 	{
 		fivebar_force(&vmc->fk_s.J, vmc->F_fk_x_N, vmc->F_fk_y_N, &vmc->fk_s.tau_a, &vmc->fk_s.tau_b);
-        VMC_TorqueAllocate(vmc, TORQUE_LIMIT);
 	}
 	else
 	{
@@ -127,65 +109,6 @@ void VMC_ForceCalc(vmc_t *vmc, float joint_a_angle_rad, float joint_b_angle_rad)
 	}
 }
 
-
-/* Allocate feasible polar commands BEFORE per-motor saturation.
- * Hip balance moment has priority; axial force uses the remaining torque range.
- * J is in mm, actuator torques here are N*m. No assumption about real AB/CB rods. */
-void VMC_TorqueAllocate(vmc_t *vmc, float torque_limit_Nm)
-{
-    vmc->tau_request_a_Nm = vmc->fk_s.tau_a / 1000.0f;
-    vmc->tau_request_b_Nm = vmc->fk_s.tau_b / 1000.0f;
-    vmc->axis_force_limited = vmc->hip_moment_limited = 0U;
-    if (vmc->fk_s.fk.status != FK_OK || !vmc->fk_s.jac_ok
-        || vmc->L_t_mm <= 0.0f || torque_limit_Nm <= 0.0f)
-    {
-        vmc->F_axis_applied_N = vmc->T_p_applied_Nmm = 0.0f;
-        vmc->fk_s.tau_a = vmc->fk_s.tau_b = 0.0f;
-        return;
-    }
-    const Jacobian *j = &vmc->fk_s.J;
-    float ex = vmc->fk_s.fk.B.x / vmc->L_t_mm;
-    float ey = vmc->fk_s.fk.B.y / vmc->L_t_mm;
-    float force_gain[2] = {(j->j11 * ex + j->j21 * ey) / 1000.0f,
-                           (j->j12 * ex + j->j22 * ey) / 1000.0f};
-    float moment_gain[2] = {(-j->j11 * ey + j->j21 * ex) / vmc->L_t_mm,
-                            (-j->j12 * ey + j->j22 * ex) / vmc->L_t_mm};
-    float moment_Nm = vmc->T_p_Nmm / 1000.0f;
-    float hip_torque[2] = {moment_gain[0] * moment_Nm,
-                           moment_gain[1] * moment_Nm};
-    float peak = fmaxf(fabsf(hip_torque[0]), fabsf(hip_torque[1]));
-    if (peak > torque_limit_Nm)
-    {
-        float scale = torque_limit_Nm / peak;
-        moment_Nm *= scale;
-        hip_torque[0] *= scale;
-        hip_torque[1] *= scale;
-        vmc->hip_moment_limited = 1U;
-    }
-    float force_low = -FLT_MAX, force_high = FLT_MAX;
-    for (int i = 0; i < 2; ++i)
-    {
-        if (fabsf(force_gain[i]) < 1e-8f) continue;
-        float a = (-torque_limit_Nm - hip_torque[i]) / force_gain[i];
-        float b = ( torque_limit_Nm - hip_torque[i]) / force_gain[i];
-        float low = fminf(a, b), high = fmaxf(a, b);
-        force_low = fmaxf(force_low, low);
-        force_high = fminf(force_high, high);
-    }
-    float force_N = vmc->F_axis_N;
-    if (force_N < force_low) force_N = force_low;
-    if (force_N > force_high) force_N = force_high;
-    /* Zero axial force is feasible after the hip-only scaling above. */
-    if (force_low > force_high) force_N = 0.0f;
-    vmc->axis_force_limited = fabsf(force_N - vmc->F_axis_N) > 1e-3f;
-    vmc->F_axis_applied_N = force_N;
-    vmc->T_p_applied_Nmm = moment_Nm * 1000.0f;
-    vmc->F_tangent_N = vmc->T_p_applied_Nmm / vmc->L_t_mm;
-    VMC_force_polar_to_cart(&vmc->fk_s.fk.B, force_N, vmc->T_p_applied_Nmm,
-                            &vmc->F_fk_x_N, &vmc->F_fk_y_N);
-    fivebar_force(j, vmc->F_fk_x_N, vmc->F_fk_y_N,
-                   &vmc->fk_s.tau_a, &vmc->fk_s.tau_b);
-}
 
 /* --------------------------------------------------------------------
  *  力坐标变换: 极坐标 (F_axis_N, T_p_Nmm) -> 直角坐标 (F_fk_x_N, F_fk_y_N)

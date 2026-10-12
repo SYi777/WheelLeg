@@ -4,7 +4,7 @@
 #include "INS_task.h"
 #include "VMC.h"
 
-/* Sensor-coordinate equilibrium in radians. This is not the COM offset y [m]. */
+/* 传感器坐标系下的平衡角 [rad]. 这不是质心偏移 y [m]. */
 #define THETA_E_RAD         (-0.065042f)
 #define PITCH_GYRO_AXIS     0
 #define LQR_LEG_SIGN        (1.0f)
@@ -14,38 +14,35 @@
 #define WHEEL_V_SIGN_L      (-1.0f)
 #define WHEEL_V_SIGN_R      (1.0f)
 #define WHEEL_RADIUS_M      0.06f
-/* Existing RPM scale retained: motor rotor RPM -> output-wheel linear speed. */
+/* 电机转子 RPM -> 输出轮线速度换算系数 (沿用现有值). */
 #define WHEEL_RPM_TO_M_S    0.000327f
 #define LQR_T_LIMIT_NM      5.0f
 #define LQR_TP_LIMIT_NMM    13000.0f
-/* Negative feedback on v_R-v_L, expressed in MODEL forward wheel torque. */
-#define WHEEL_DIFF_KD       1.0f   /* N*m / (m/s), initial damping gain */
+/* 对 v_R-v_L 的负反馈, 以模型前向轮力矩表示. */
+#define WHEEL_DIFF_KD       1.0f   /* N*m/(m/s), 阻尼增益 */
 #define WHEEL_DIFF_LIMIT_NM 0.8f
 
 typedef struct
 {
-    float theta_rad, dtheta_rad_s;
-    float x_m, v_m_s; /* Unclipped wheel odometry relative to control reset. */
-    float phi_rad, dphi_rad_s;
-    /* Driver-facing wheel command; convert with LQR_WHEEL_SIGN for model T. */
-    float T_Nm;
-    float Tp_Nmm;
+    float theta_rad, dtheta_rad_s;   /* 本腿角度状态 */
+    float x_m, v_m_s;                /* 镜像共享值, watch 用 */
+    float phi_rad, dphi_rad_s;       /* 机身姿态 (INS 共享) */
+    float T_Nm;                      /* 本腿轮扭矩指令 (驱动系, 已乘 LQR_WHEEL_SIGN) */
+    float Tp_Nmm;                    /* 本腿髋力矩指令 */
 } balance_t;
 
 typedef struct
 {
-    balance_t common;             /* Symmetric longitudinal state, one x integral. */
-    float v_raw_L_m_s, v_raw_R_m_s;
-    float v_L_m_s, v_R_m_s;
-    float T_common_model_Nm, Tp_common_model_Nm;
-    float T_diff_model_Nm;        /* +left, -right before driver sign conversion. */
-    float wheel_terms_Nm[6], hip_terms_Nm[6];
-} balance_pair_t;
+    float x_m;                       /* 整车共享位移 (单积分器, 左任务独占更新) */
+    float v_m_s;                     /* 整车共享速度 (两轮平均) */
+    float v_L_m_s, v_R_m_s;          /* 单轮速度 (差速阻尼用) */
+} balance_shared_t;
 
 float Balance_WheelVelocity(float rpm, float rpm_sign, const vmc_t *vmc,
                             const INS_t *ins);
-void Balance_PairUpdate(balance_pair_t *pair, balance_t *left, balance_t *right,
-                        const vmc_t *vmc_left, const vmc_t *vmc_right,
-                        const INS_t *ins, float rpm_left, float rpm_right, float dt);
-void Balance_PairReset(balance_pair_t *pair, balance_t *left, balance_t *right);
+void Balance_SharedUpdate(balance_shared_t *sh, float rpm_left, float rpm_right,
+                          float dt);
+void Balance_Update(balance_t *bal, const balance_shared_t *sh,
+                    const vmc_t *vmc, const INS_t *ins);
+void Balance_Reset(balance_t *bal);
 #endif

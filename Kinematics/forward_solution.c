@@ -19,17 +19,17 @@
  *
  * ─── 角度定义 (所有角度以逆时针为正, 参考轴为 +X) ───
  *
- *   α  (alpha) : 输入杆 OA 的转角, 从 +X 轴逆时针量至 OA
- *   β  (beta)  : 输入杆 OC 的转角, 从 +X 轴逆时针量至 OC
- *   θ1 (theta1): 从动杆 AB 的全局绝对角, 从 +X 轴逆时针量至 AB, 范围 [0, 2π)
- *   θ2 (theta2): 从动杆 CB 的全局绝对角, 从 +X 轴逆时针量至 CB, 范围 [0, 2π)
- *   Δθ_input   : 主动杆相对夹角, 归算到 [0, π], 用于主动侧限位
- *   Δθ_passive : 从动杆相对夹角, 归算到 [0, π], 用于从动侧干涉判断
+ *   alpha       : 输入杆 OA 的转角, 从 +X 轴逆时针量至 OA
+ *   beta        : 输入杆 OC 的转角, 从 +X 轴逆时针量至 OC
+ *   th1         : 从动杆 AB 的全局绝对角, 从 +X 轴逆时针量至 AB, 范围 [0, 2*pi)
+ *   th2         : 从动杆 CB 的全局绝对角, 从 +X 轴逆时针量至 CB, 范围 [0, 2*pi)
+ *   delta_input : 主动杆相对夹角, 归算到 [0, pi], 用于主动侧限位
+ *   delta_passive: 从动杆相对夹角, 归算到 [0, pi], 用于从动侧干涉判断
  *
- *   坐标系: O = (0,0),  X 轴向右为正,  Y 轴向上为正
+ *   坐标系: 从车辆左侧看，车头在画面左边；O=(0,0)，+X 朝车头（画面左），+Y 朝下
  *
  * ─── 重要说明 ───
- *   1. θ?、θ? 是全局绝对角，可落在 0~2π 任意象限，大于 π 属于正常现象
+ *   1. th1、th2 是全局绝对角，可落在 [0, 2*pi) 任意象限，大于 pi 属于正常现象
  *   2. 严禁对绝对角直接减 π，会导致杆朝向反向、末端坐标完全错误
  *   3. 干涉/限位判断必须使用「相对夹角」，与连杆整体姿态无关
  *   4. 解选择使用「叉积判据」(B 相对 AC 连线的位置)，与绝对角大小无关
@@ -59,7 +59,7 @@ static float fsqrt(float x)           { return sqrtf(x); }
 
 /* ===================== 角度归算工具 ===================== */
 
-/* 归一到 [-π, π) */
+/* 归一到 [-pi, pi] */
 static inline float wrap(float a) {
     const float two_pi = 6.283185307179586f;
     const float pi     = 3.141592653589793f;
@@ -69,21 +69,21 @@ static inline float wrap(float a) {
     return a;
 }
 
-/* 归一到 [0, 2π) */
+/* 归一到 [0, 2*pi) */
 static inline float wrap_pos(float a) {
     const float two_pi = 6.283185307179586f;
     a = fmodf(a, two_pi);
     return a < 0.0f ? a + two_pi : a;
 }
 
-/* 计算两杆的相对夹角，归算到 [0, π]，用于限位/干涉判断 */
+/* 计算两杆的相对夹角，归算到 [0, pi]，用于限位/干涉判断 */
 static inline float relative_angle(float th_a, float th_b) {
     float d = fabsf(wrap(th_b - th_a));
     const float pi = 3.141592653589793f;
     return d > pi ? 2.0f * pi - d : d;
 }
 
-/* 主动杆夹角：归算到 [0, π] */
+/* 主动杆夹角：归算到 [0, pi] */
 static inline float delta_input(float alpha, float beta) {
     return relative_angle(alpha, beta);
 }
@@ -91,29 +91,28 @@ static inline float delta_input(float alpha, float beta) {
 /* ====================================================================
  *  fivebar_fk — 正运动学核心
  *
- *  输入: alpha (α) — 左驱动转角 [rad]
- *        beta  (β) — 右驱动转角 [rad]
+ *  输入: alpha - 左驱动转角 [rad]
+ *        beta  - 右驱动转角 [rad]
  *
- *  推导路径:
- *    1) A = l1·[cosα, sinα],  C = l2·[cosβ, sinβ]
- *    2) 联立: B = A + l3·[cosθ1, sinθ1] = C + l4·[cosθ2, sinθ2]
- *    3) 移项平方消 θ1:
- *       l32 = |C ? A + l4·[cosθ2, sinθ2]|2
- *       l32 = lAC2 + l42 + 2·l4·(xC?xA)·cosθ2 + 2·l4·(yC?yA)·sinθ2
- *    4) 整理为标准辅助角方程  a·cosθ2 + b·sinθ2 = c
- *       a = 2·l4·(xC ? xA)
- *       b = 2·l4·(yC ? yA)
- *       c = l32 ? l42 ? lAC2
- *    5) 万能公式 t = tan(θ2/2): (a+c)·t2 ? 2b·t + (c?a) = 0
- *       解得 θ2 = 2·atan2(b ± √(a2+b2?c2), a+c)
- *    6) 回代得 θ1 = atan2(dy + l4·sinθ2, dx + l4·cosθ2)
- *    7) 按叉积判据选解 (B 相对 AC 连线的位置)，区分肘下垂/肘上抬
- *    8) B = A + l3·[cosθ1, sinθ1]
+ *  推导路径 (长度与坐标单位均为 mm):
+ *    1) A = (L1*cos(alpha), L1*sin(alpha))
+ *       C = (L2*cos(beta), L2*sin(beta))
+ *    2) B = A + L3*(cos(th1), sin(th1))
+ *         = C + L4*(cos(th2), sin(th2))
+ *    3) 令 dx = C.x-A.x, dy = C.y-A.y, lac2 = dx*dx+dy*dy。
+ *       消去 th1: L3*L3 = (dx+L4*cos(th2))^2 + (dy+L4*sin(th2))^2
+ *    4) 整理为 a*cos(th2)+b*sin(th2)=c:
+ *       a = 2*L4*dx, b = 2*L4*dy, c = L3*L3-L4*L4-lac2
+ *    5) 令 t=tan(th2/2): (a+c)*t*t - 2*b*t + (c-a) = 0。
+ *       disc=a*a+b*b-c*c; th2=2*atan2(b +/- sqrt(disc), a+c)。
+ *    6) th1=atan2(dy+L4*sin(th2), dx+L4*cos(th2))。
+ *    7) 按叉积判据选解 (B 相对 AC 连线的位置)，区分肘下垂/肘上抬。
+ *    8) B=A+L3*(cos(th1), sin(th1))。
  *
  *  异常处理:
  *    - lac < EPS       → FK_SINGULARITY  (A 与 C 重合)
  *    - lac 超出可达区间 → FK_NO_SOLUTION  (三角形两边之和/差约束)
- *    - Δθ 超出限位     → FK_OUT_OF_RANGE (主动杆/从动杆夹角越界)
+ *    - delta_input 或 delta_passive 超出限位 -> FK_OUT_OF_RANGE
  * ==================================================================== */
 FKResult fivebar_fk(float alpha, float beta) {
     FKResult r = {0};
@@ -125,8 +124,8 @@ FKResult fivebar_fk(float alpha, float beta) {
     r.A.x = L1 * ca;  r.A.y = L1 * sa;
     r.C.x = L2 * cb;  r.C.y = L2 * sb;
 
-    float dx   = r.C.x - r.A.x;    /* xC ? xA */
-    float dy   = r.C.y - r.A.y;    /* yC ? yA */
+    float dx   = r.C.x - r.A.x;    /* dx = C.x - A.x */
+    float dy   = r.C.y - r.A.y;    /* dy = C.y - A.y */
     float lac2 = dx*dx + dy*dy;
     float lac  = fsqrt(lac2);
 
@@ -144,9 +143,9 @@ FKResult fivebar_fk(float alpha, float beta) {
     }
 
     /* ---- Step 3: 辅助角方程系数 ---- */
-    float a = 2.0f * L4 * dx;             /* 2·l4·(xC ? xA) */
-    float b = 2.0f * L4 * dy;             /* 2·l4·(yC ? yA) */
-    float c = L3*L3 - L4*L4 - lac2;       /* l32 ? l42 ? lAC2 */
+    float a = 2.0f * L4 * dx;             /* a = 2*L4*dx */
+    float b = 2.0f * L4 * dy;             /* b = 2*L4*dy */
+    float c = L3*L3 - L4*L4 - lac2;       /* c = L3*L3 - L4*L4 - lac2 */
 
     float disc = a*a + b*b - c*c;
     if (disc < -EPS) {
@@ -156,14 +155,14 @@ FKResult fivebar_fk(float alpha, float beta) {
     if (disc < 0.0f) disc = 0.0f;
     float sqrt_d = fsqrt(disc);
 
-    /* ---- Step 4: 万能公式求两候选 θ2 ---- */
+    /* ---- Step 4: 半角公式求两候选 th2 ---- */
     float t_cand[2];
     int   nc = 0;
 
     if (fabsf(a + c) < EPS) {
-        /* 二次项退化: (a+c)·t2 ? 2b·t + (c?a) = 0
-           退化为 ?2b·t + (c?a) = 0 → t = (c?a)/(2b)
-           即 θ2 = 2·atan2(c?a, 2b)                              */
+        /* 二次项退化: (a+c)*t*t - 2*b*t + (c-a) = 0
+           退化为 -2*b*t + (c-a) = 0, t = (c-a)/(2*b)
+           因此 th2 = 2*atan2(c-a, 2*b) */
         if (fabsf(b) > EPS) {
             t_cand[nc++] = 2.0f * fatan2(c - a, 2.0f * b);
         } else {
@@ -179,16 +178,16 @@ FKResult fivebar_fk(float alpha, float beta) {
      *
      *  核心思想: 判断候选 B 在 AC 连线的哪一侧。
      *
-     *  叉积 cross = AC × AB = dx·(B.y?A.y) ? dy·(B.x?A.x)
-     *  叉积 cross_O = AC × AO = dx·( 0?A.y) ? dy·( 0?A.x)
+     *  cross_B = dx*(B.y-A.y) - dy*(B.x-A.x)
+     *  cross_O = dx*(0-A.y) - dy*(0-A.x)
      *
      *  - cross 和 cross_O 异号 → B 与原点 O 在 AC 异侧 → 肘下垂
      *  - cross 和 cross_O 同号 → B 与原点 O 在 AC 同侧 → 肘上抬
      *
      *  此判据:
-     *    ? 与 θ?、θ? 的绝对大小无关
-     *    ? 与连杆是否翻转 180° 无关
-     *    ? 与 A、C 的左右顺序无关
+     *    - 与 th1、th2 的绝对大小无关
+     *    - 与连杆是否翻转 180° 无关
+     *    - 与 A、C 的左右顺序无关
      */
 
     /* 预计算 cross_O = AC × AO (与候选解无关, 只算一次) */
@@ -202,7 +201,7 @@ FKResult fivebar_fk(float alpha, float beta) {
     for (int i = 0; i < nc; i++) {
         float th2 = wrap_pos(t_cand[i]);
 
-        /* 回代求 θ1 */
+        /* 回代求 th1 */
         float rx = dx + L4 * fcos(th2);
         float ry = dy + L4 * fsin(th2);
         float th1 = wrap_pos(fatan2(ry, rx));
@@ -226,7 +225,7 @@ FKResult fivebar_fk(float alpha, float beta) {
 #if ASSEMBLY_MODE == 0
         /* 肘下垂模式: 必须选异侧解 */
         if (!is_elbow_down) continue;
-        /* tiebreak: 选 B.y 更大的 (下垂更深, Y 向上时 y 更小 = 更下) */
+        /* tiebreak: 选 B.y 更大的（+Y 向下，y 越大表示轮心越低） */
         float score = by;
 #else
         /* 肘上抬模式: 必须选同侧解 */
@@ -258,7 +257,7 @@ FKResult fivebar_fk(float alpha, float beta) {
     r.delta_input   = delta_input(alpha, beta);
     r.delta_passive = relative_angle(r.th1, r.th2);
 
-    if (r.delta_input   < DELTA_MIN || r.delta_input   > 3.004/*DELTA_MAX*/ ||
+    if (r.delta_input   < DELTA_MIN || r.delta_input   > 3.004f/*DELTA_MAX*/ ||
         r.delta_passive < DELTA_MIN || r.delta_passive > DELTA_MAX) {
         r.status = FK_OUT_OF_RANGE;
         return r;
@@ -271,15 +270,14 @@ FKResult fivebar_fk(float alpha, float beta) {
 /* ====================================================================
  *  fivebar_jacobian — 雅可比矩阵
  *
- *  B' = J · [α', β']^T
+ *  dB/dt = J * [dalpha/dt, dbeta/dt]^T
  *
- *        1           [  sinθ2·s1   ?sinθ1·s2 ]
- *  J = ───── · [                            ]
- *      sinΔθ       [ ?cosθ2·s1    cosθ1·s2 ]
+ *      1                  [  sin(th2)*s1   -sin(th1)*s2 ]
+ *  J = ---------------- * [                             ]
+ *      sin(th2-th1)       [ -cos(th2)*s1    cos(th1)*s2 ]
  *
- *  s1 = l1·sin(θ1?α),   s2 = l2·sin(θ2?β),   Δθ = θ2?θ1
- *
- *  返回 false → 奇异 (sinΔθ≈0, 两被动杆平行, det(J)=0)
+ *  s1=L1*sin(th1-alpha), s2=L2*sin(th2-beta)。
+ *  返回 false: abs(sin(th2-th1)) < EPS，公式分母为零，无法计算。
  * ==================================================================== */
 bool fivebar_jacobian(float alpha, float beta, float th1, float th2, Jacobian *J)
 {
@@ -308,9 +306,9 @@ bool fivebar_jacobian(float alpha, float beta, float th1, float th2, Jacobian *J
 /* ====================================================================
  *  fivebar_force — 力控逆解
  *
- *  τ = J^T · F
- *  τ[0] = τα = j11·Fx + j21·Fy   (左驱动关节力矩)
- *  τ[1] = τβ = j12·Fx + j22·Fy   (右驱动关节力矩)
+ *  [tau_a, tau_b]^T = J^T * [Fx, Fy]^T
+ *  tau_a = j11*Fx + j21*Fy   (左驱动关节力矩)
+ *  tau_b = j12*Fx + j22*Fy   (右驱动关节力矩)
  * ==================================================================== */
 void fivebar_force(const Jacobian *J, float Fx, float Fy, float *tau_a, float *tau_b)
 {
