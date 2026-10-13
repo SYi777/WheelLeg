@@ -1269,6 +1269,16 @@
               <FileType>5</FileType>
               <FilePath>..\Tasks\Leg_Tasks.h</FilePath>
             </File>
+            <File>
+              <FileName>RobotState.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Tasks\RobotState.c</FilePath>
+            </File>
+            <File>
+              <FileName>RobotState.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Tasks\RobotState.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

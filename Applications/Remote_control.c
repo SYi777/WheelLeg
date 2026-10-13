@@ -1,15 +1,20 @@
 /**
 *@file Remote_control.c
 *@brief 遥控器 SBUS 数据接收与解析
-*@Author SYi777
+*@Author 王草凡 SYi777
 *@Email jyh1621839418@163.com
-*@Date
+*@Date 2026-10-13
 *
-*参考王草凡的 C 板实现，移植到 H7 并使用 HAL 初始化 DMA。
+*参考王草凡的 C 板实现，移植到 H7 并使用 HAL 初始化 DMA，添加遥控器离线保护
 **/
 // 参考王草凡的遥控器协议说明
 // 移植 C 板遥控器解析逻辑，使用 HAL 初始化 H7 的 DMA
 #include "Remote_control.h"
+#include "struct_typedef.h"
+
+volatile uint8_t rc_online = 0;			// 遥控器在线标志，0 离线 1 在线
+volatile uint8_t flag      = 0;			// 中断内部标志位
+volatile uint32_t error_count = 0;		// 未进中断计数
 
 RC_ctrl_t remote_ctrl;// 遥控器控制变量
 __attribute__ ((section(".ARM.__at_0x24000000"))) uint8_t SBUS_MultiRx_Buf[2][SBUS_RX_BUF_NUM];// 双缓冲接收 SBUS 原始数据，防止DMA传输越界
@@ -35,8 +40,8 @@ static void SBUS_TO_RC(volatile const uint8_t *sbus_buf, RC_ctrl_t *remote_ctrl)
     remote_ctrl->rc.ch[2] = ((sbus_buf[2] >> 6) | (sbus_buf[3] << 2) |          // 遥控器通道 2
                          (sbus_buf[4] << 10)) &0x07ff;
     remote_ctrl->rc.ch[3] = ((sbus_buf[4] >> 1) | (sbus_buf[5] << 7)) & 0x07ff; // 遥控器通道 3
-    remote_ctrl->rc.s[0] = ((sbus_buf[5] >> 4) & 0x0003);                  // 左拨杆
-    remote_ctrl->rc.s[1] = ((sbus_buf[5] >> 4) & 0x000C) >> 2;                       // 右拨杆
+    remote_ctrl->rc.s[0] = ((sbus_buf[5] >> 4) & 0x0003);                  		// 左拨杆
+    remote_ctrl->rc.s[1] = ((sbus_buf[5] >> 4) & 0x000C) >> 2;                  // 右拨杆
     remote_ctrl->mouse.x = sbus_buf[6] | (sbus_buf[7] << 8);                    // 鼠标 X 轴
     remote_ctrl->mouse.y = sbus_buf[8] | (sbus_buf[9] << 8);                    // 鼠标 Y 轴
     remote_ctrl->mouse.z = sbus_buf[10] | (sbus_buf[11] << 8);                  // 鼠标 Z 轴
@@ -68,6 +73,9 @@ static int16_t RC_abs(int16_t value)
  */
 static void USER_USART5_RxHandler(UART_HandleTypeDef *huart, uint16_t Size)
 {
+    flag = 1;   // 收到接收事件 → 遥控器在线喂狗
+	
+	
     if (((((DMA_Stream_TypeDef *)huart->hdmarx->Instance)->CR) & DMA_SxCR_CT) == RESET)
     {
         // 缓冲区0 接收完成
@@ -151,4 +159,31 @@ void RemoteContrlInit(void)
 {
 	// 启动 DMA 双缓冲接收
 	USART_RxDMA_DoubleBuffer_Init(&huart5,(uint32_t *)SBUS_MultiRx_Buf[0],(uint32_t *)SBUS_MultiRx_Buf[1],SBUS_RX_BUF_NUM);
+}
+
+volatile uint8_t* GetRCOnlineFlag(void)
+{
+	return &rc_online;
+}
+
+/**
+ * @brief  遥控器掉线检测 (1kHz 调用)
+ * @return 无
+ *
+ * flag 由接收中断置 1 (喂狗), 本函数每 1ms 清一次狗并累计未喂狗时间,
+ * 连续 100ms 未收到 SBUS 帧判为掉线 (rc_online = 0), 恢复收帧后自动置 1。
+ */
+void RC_OnlineCheck(void)
+{
+    if (flag)
+    {
+        flag = 0;               // 清狗, 等待下一帧再喂
+        rc_online = 1;          // 有帧 → 在线
+        error_count = 0;
+    }
+    else
+    {
+        if (error_count < 100U) error_count++;   // 1kHz 下 1 次 = 1ms, 封顶防溢出
+        if (error_count >= 100U) rc_online = 0;  // 100ms 无帧 → 判掉线
+    }
 }

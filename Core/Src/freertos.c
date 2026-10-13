@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "INS_task.h"
 #include "Leg_Tasks.h"
+#include "RobotState.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -66,6 +67,13 @@ const osThreadAttr_t RLegTask_attributes = {
 	.name = "Balance_R",
 	.stack_size = 4096,
 	.priority = (osPriority_t) osPriorityHigh,
+};
+
+osThreadId_t StateTaskHandle;
+const osThreadAttr_t StateTask_attributes = {
+	.name = "RobotState",
+	.stack_size = 1024,
+	.priority = (osPriority_t) osPriorityAboveNormal,
 };
 
 /* Both legs are controlled by LLegTaskHandle in one 1 ms frame. */
@@ -122,6 +130,7 @@ void MX_FREERTOS_Init(void) {
   INSTaskHandle = osThreadNew(INS_task , NULL, &INSTask_attributes);
   LLegTaskHandle = osThreadNew(LLeg_task, NULL, &LLegTask_attributes);
   RLegTaskHandle = osThreadNew(RLeg_task, NULL, &RLegTask_attributes);
+  StateTaskHandle = osThreadNew(RobotTotalState_Task, NULL, &StateTask_attributes);
   /* The paired control task owns all leg and wheel commands. */
   /* USER CODE END RTOS_THREADS */
 

@@ -22,24 +22,23 @@ Dialog DLL:      TCM.DLL V1.56.6.0
  
 <h2>Project:</h2>
 C:\Users\HHH\Desktop\WheelLeg\MDK-ARM\WheelLeg.uvprojx
-Project File Date:  10/10/2026
+Project File Date:  10/13/2026
 
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'D:\Applications\Keil\ARM\ARMCC\Bin'
 Build target 'WheelLeg'
-compiling inverse_solution.c...
-compiling forward_solution.c...
-compiling 3508_CtrlApplications.c...
-compiling 8009_CtrlApplications.c...
-compiling Remote_control.c...
-compiling balance.c...
-compiling VMC.c...
-compiling DM_motor.c...
-compiling Leg_Tasks.c...
+compiling RobotState.c...
+..\Tasks\RobotState.c(5): warning:  #177-D: variable "RobotAuto"  was declared but never referenced
+  static uint8_t RobotAuto=0;     								//自动/手动瞄准标志，手动0自动1
+..\Tasks\RobotState.c(6): warning:  #550-D: variable "CtrlMode"  was set but never used
+  static uint8_t CtrlMode=0;     									//键盘/遥控操作标志，遥控0键盘1
+..\Tasks\RobotState.c(8): warning:  #177-D: variable "robotState"  was declared but never referenced
+  static enum RobotState_e robotState=RobotState_e_Powerless;  	//机器人初始状态
+..\Tasks\RobotState.c: 3 warnings, 0 errors
 linking...
-Program Size: Code=73268 RO-data=3632 RW-data=1316 ZI-data=46148  
+Program Size: Code=73640 RO-data=3680 RW-data=1340 ZI-data=46148  
 FromELF: creating hex file...
-"WheelLeg\WheelLeg.axf" - 0 Error(s), 0 Warning(s).
+"WheelLeg\WheelLeg.axf" - 0 Error(s), 3 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -62,7 +61,7 @@ Package Vendor: Keil
 
    * Component: ARM::CMSIS:CORE@6.2.0
       Include file:  CMSIS/Core/Include/tz_context.h
-Build Time Elapsed:  00:00:10
+Build Time Elapsed:  00:00:04
 </pre>
 </body>
 </html>

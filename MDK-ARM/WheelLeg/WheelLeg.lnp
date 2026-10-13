@@ -51,6 +51,7 @@
 "wheelleg\balance.o"
 "wheelleg\ins_task.o"
 "wheelleg\leg_tasks.o"
+"wheelleg\robotstate.o"
 "wheelleg\dwt.o"
 "wheelleg\bsp_rc.o"
 "wheelleg\bsp_pwm.o"

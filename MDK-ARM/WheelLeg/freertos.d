@@ -84,3 +84,4 @@ wheelleg\freertos.o: ../Applications/DM_motor.h
 wheelleg\freertos.o: ../Core/Inc/fdcan.h
 wheelleg\freertos.o: ../Applications/struct_typedef.h
 wheelleg\freertos.o: ../Algorithm/pid.h
+wheelleg\freertos.o: ../Tasks/RobotState.h

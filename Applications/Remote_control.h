@@ -93,5 +93,10 @@ void slove_data_error(void);
  * @brief  遥控器模块底层初始化（DMA 双缓冲配置等）。
  */
 void RemoteContrlInit(void);
+/**
+ * @brief  遥控器掉线检测，需 1kHz 周期调用。
+ *         连续 100ms 未收到 SBUS 帧将 rc_online 置 0。
+ */
+void RC_OnlineCheck(void);
 
 #endif
