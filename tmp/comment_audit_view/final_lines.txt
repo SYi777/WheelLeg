@@ -1,0 +1,13 @@
+137: 
+138:     // 计算辅助角方程系数 (半角 t=tan(th2/2))
+139:     float a = 2.0f * L4 * dx;             // a: 半角方程系数 [mm^2] = 2*L4*dx
+140:     float b = 2.0f * L4 * dy;             // b: 半角方程系数 [mm^2] = 2*L4*dy
+141:     float c = L3*L3 - L4*L4 - lac2;       // c: 半角方程系数 [mm^2] = L3*L3 - L4*L4 - lac2
+142: 
+143:     float disc = a*a + b*b - c*c;
+239: 
+240:     // 主动杆上限 178°: 最短腿位形实测 din=174.83°, 留 3.2° 余量; 180° 为翻转死点
+241: 	// 2026.10.12 23:17 jyh review 感觉 passive 这个变量存在和筛选没意义, delta 宏定义原本就不是给下面小腿的
+242:     if (r.delta_input   < DELTA_MIN || r.delta_input   > (178.0f * 0.01745329252f) ||
+243:         r.delta_passive < DELTA_MIN || r.delta_passive > DELTA_MAX) {
+244:         r.status = FK_OUT_OF_RANGE;

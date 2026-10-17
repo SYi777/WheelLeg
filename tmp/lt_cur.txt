@@ -1,0 +1,99 @@
+===== Tasks/Leg_Tasks.h =====
+   1|/**
+   2|*@file Leg_Tasks.h
+   3|*@brief 宸﹀彸鑵挎帶鍒朵换鍔″強妯�婊氥�侀槻鍔堝弶鎺ュ彛
+   4|*@Author SYi777
+   5|*@Email jyh1621839418@163.com
+   6|*@Date 2026/9/30
+   7|**/
+   8|#ifndef __LEG_TASKS_H
+   9|#define __LEG_TASKS_H
+  10|#include "8009_CtrlApplications.h"
+  11|#include "DM_motor.h"
+  12|#include "arm_math.h"
+  13|#include "struct_typedef.h"
+  14|#include "pid.h"
+  15|
+  16|#define M_PI 3.1415926f
+  17|//瀹夊叏鍖洪棿瀹氫箟
+  18|#define MAX_DELTA (M_PI-0.2f)
+  19|#define MIN_DELTA (M_PI/2-0.1f)
+  20|//pid 甯搁噺瀹氫箟
+  21|#define PID_MAX_OUT 30.0f
+  22|#define PID_MAX_IOUT 5.0f
+  23|#define PID_P 25.0f
+  24|#define PID_I 0.0f
+  25|#define PID_D 10.0f
+  26|//宸﹁吙鐢垫満鎺у埗缁撴瀯浣撳畾涔夛紝鍖呭惈鍐呭�筺opowerflag锛宼ffout锛屽綋鍓嶈�掑害锛岀洰鏍囪�掑害锛宲id鎺у埗缁撴瀯浣�
+  27|typedef struct
+  28|{
+  29|	//鏉ヨ嚜鐢垫満鐨勫�硷紝鐢ㄤ簬鍒濆�嬪寲
+  30|	const fp32 *AnglePoint;
+  31|	
+  32|	//瑙掑害
+  33|	fp32 Now_AbsoluteAngle;
+  34|	fp32 Wanted_AbsoluteAngle;
+  35|	
+  36|	//PID
+  37|	pid_type_def angle_pid;
+  38|	
+  39|	//control
+  40|	int16_t Torque_out;
+  41|	uint8_t noPowerflag;
+  42|}LeftLegCtrl_s;
+  43|
+  44|void LLeg_task(void *argument);
+  45|void RLeg_task(void *argument);
+  46|uint8_t Gap_check(LeftLegCtrl_s *c1,LeftLegCtrl_s *c2);
+  47|void Left_leg_init(void);
+  48|void Update_left_leg(LeftLegCtrl_s *c);
+  49|float Roll_Loop(float roll_set, float roll, float roll_gyro);
+  50|float AntiSplit_Loop(float theta_rel_body_L_rad, float theta_rel_body_R_rad);
+  51|
+  52|#endif
+===== tmp/backup_982200d_20261013/Tasks/Leg_Tasks.h =====
+   1|#ifndef __LEG_TASKS_H
+   2|#define __LEG_TASKS_H
+   3|#include "8009_CtrlApplications.h"
+   4|#include "DM_motor.h"
+   5|#include "arm_math.h"
+   6|#include "struct_typedef.h"
+   7|#include "pid.h"
+   8|
+   9|#define M_PI 3.1415926f
+  10|//瀹夊叏鍖洪棿瀹氫箟
+  11|#define MAX_DELTA (M_PI-0.2f)
+  12|#define MIN_DELTA (M_PI/2-0.1f)
+  13|//pid 甯搁噺瀹氫箟
+  14|#define PID_MAX_OUT 30.0f
+  15|#define PID_MAX_IOUT 5.0f
+  16|#define PID_P 25.0f
+  17|#define PID_I 0.0f
+  18|#define PID_D 10.0f
+  19|//宸﹁吙鐢垫満鎺у埗缁撴瀯浣撳畾涔夛紝鍖呭惈鍐呭�筺opowerflag锛宼ffout锛屽綋鍓嶈�掑害锛岀洰鏍囪�掑害锛宲id鎺у埗缁撴瀯浣�
+  20|typedef struct
+  21|{
+  22|	//鏉ヨ嚜鐢垫満鐨勫�硷紝鐢ㄤ簬鍒濆�嬪寲
+  23|	const fp32 *AnglePoint;
+  24|	
+  25|	//瑙掑害
+  26|	fp32 Now_AbsoluteAngle;
+  27|	fp32 Wanted_AbsoluteAngle;
+  28|	
+  29|	//PID
+  30|	pid_type_def angle_pid;
+  31|	
+  32|	//control
+  33|	int16_t Torque_out;
+  34|	uint8_t noPowerflag;
+  35|}LeftLegCtrl_s;
+  36|
+  37|void LLeg_task(void *argument);
+  38|void RLeg_task(void *argument);
+  39|uint8_t Gap_check(LeftLegCtrl_s *c1,LeftLegCtrl_s *c2);
+  40|void Left_leg_init(void);
+  41|void Update_left_leg(LeftLegCtrl_s *c);
+  42|float Roll_Loop(float roll_set, float roll, float roll_gyro);
+  43|float AntiSplit_Loop(float theta_rel_body_L_rad, float theta_rel_body_R_rad);
+  44|
+  45|#endif

@@ -1,42 +1,42 @@
 /**
- * @file    forward_solution.c
- * @brief   平面五连杆机构正运动学解算
- * @Author  SYi777
- * @Email   jyh1621839418@163.com
- * @Date    2026-6-17
- *
- * 机构拓扑
- *
- *             O (固定坐标系原点, 基座)
- *            / \
- *          l1   l2      ← 输入杆 (主动)
- *          /     \
- *         A       C     ← 主动关节 (A = 左驱动, C = 右驱动)
- *          \     /
- *          l3   l4      ← 从动杆 (被动)
- *            \ /
- *             B         ← 末端执行点
- *
- * ─── 角度定义 (所有角度以逆时针为正, 参考轴为 +X) ───
- *
- *   alpha       : 输入杆 OA 的转角, 从 +X 轴逆时针量至 OA
- *   beta        : 输入杆 OC 的转角, 从 +X 轴逆时针量至 OC
- *   th1         : 从动杆 AB 的全局绝对角, 从 +X 轴逆时针量至 AB, 范围 [0, 2*pi)
- *   th2         : 从动杆 CB 的全局绝对角, 从 +X 轴逆时针量至 CB, 范围 [0, 2*pi)
- *   delta_input : 主动杆(曲柄 OA 与 OC)相对夹角, [0, pi]. 0=两曲柄同向(伸腿极限),
- *                 越大曲柄越张开、腿越短; pi=两曲柄反向共线(收腿翻转死点). 用于主动侧限位.
- *   delta_passive: 从动杆(AB 与 CB)相对夹角, [0, pi]. 0=两杆平行(伸腿极限),
- *                 越大腿越短; pi=两杆共线反向(雅可比奇异, sin(th2-th1)=0). 用于从动侧干涉判断.
- *
- *   坐标系: 从车辆左侧看，车头在画面左边；O=(0,0)，+X 朝车头（画面左），+Y 朝下
- *
- * ─── 重要说明 ───
- *   1. th1、th2 是全局绝对角，可落在 [0, 2*pi) 任意象限，大于 pi 属于正常现象
- *   2. 严禁对绝对角直接减 π，会导致杆朝向反向、末端坐标完全错误
- *   3. 干涉/限位判断必须使用「相对夹角」，与连杆整体姿态无关
- *   4. 解选择使用「叉积判据」(B 相对 AC 连线的位置)，与绝对角大小无关
- *   5. 叉积判据天然免疫连杆整体翻转 180° 的影响
- */
+*@file forward_solution.c
+*@brief 平面五连杆机构正运动学解算
+*@Author SYi777
+*@Email jyh1621839418@163.com
+*@Date 2026-6-17
+*
+*机构拓扑
+*
+*             O (固定坐标系原点, 基座)
+*            / \
+*          l1   l2      ← 输入杆 (主动)
+*          /     \
+*         A       C     ← 主动关节 (A = 左驱动, C = 右驱动)
+*          \     /
+*          l3   l4      ← 从动杆 (被动)
+*            \ /
+*             B         ← 末端执行点
+*
+*角度定义 (所有角度以逆时针为正, 参考轴为 +X)
+*
+*  alpha        : 输入杆 OA 转角 [rad], 从 +X 轴逆时针量至 OA
+*  beta         : 输入杆 OC 转角 [rad], 从 +X 轴逆时针量至 OC
+*  th1          : 从动杆 AB 全局绝对角 [rad], 从 +X 轴逆时针量至 AB, 范围 [0, 2*pi)
+*  th2          : 从动杆 CB 全局绝对角 [rad], 从 +X 轴逆时针量至 CB, 范围 [0, 2*pi)
+*  delta_input  : 主动杆 (曲柄 OA 与 OC) 相对夹角 [rad], [0, pi]; 0=两曲柄同向(伸腿极限),
+*                 越大曲柄越张开、腿越短; pi=两曲柄反向共线(收腿翻转死点); 用于主动侧限位
+*  delta_passive: 从动杆 (AB 与 CB) 相对夹角 [rad], [0, pi]; 0=两杆平行(伸腿极限),
+*                 越大腿越短; pi=两杆共线反向(雅可比奇异, sin(th2-th1)=0); 用于从动侧干涉判断
+*
+*坐标系: 从车辆左侧看, 车头在画面左边; O=(0,0), +X 朝车头(画面左), +Y 朝下
+*
+*重要说明
+*  1. th1、th2 是全局绝对角, 可落在 [0, 2*pi) 任意象限, 大于 pi 属于正常现象
+*  2. 严禁对绝对角直接减 pi, 会导致杆朝向反向、末端坐标完全错误
+*  3. 干涉/限位判断必须使用相对夹角, 与连杆整体姿态无关
+*  4. 解选择使用叉积判据 (B 相对 AC 连线的位置), 与绝对角大小无关
+*  5. 叉积判据天然免疫连杆整体翻转 180° 的影响
+**/
 
 #include <math.h>
 #include <stdbool.h>
@@ -97,32 +97,32 @@ static inline float delta_input(float alpha, float beta) {
 }
 
 /**
- * @brief  求串联腿等效传动的轮心正运动学
+ * @brief  由两驱动角求轮心 B 的正运动学
  * @param  alpha  第 1 个驱动角 [rad]
  * @param  beta  第 2 个驱动角 [rad]
- * @return FKResult，包含 A、C、B 坐标及求解状态
+ * @return FKResult, 含 A、C、B 坐标 [mm]、th1/th2 [rad]、delta 夹角 [rad] 及状态码
  *
- * 令 dx=C.x-A.x、dy=C.y-A.y；由 B=A+L3*(cos(th1),sin(th1))=C+L4*(cos(th2),sin(th2)) 得
+ * 令 dx=C.x-A.x、dy=C.y-A.y; 由 B=A+L3*(cos(th1),sin(th1))=C+L4*(cos(th2),sin(th2)) 得
  * L3*L3=(dx+L4*cos(th2))^2+(dy+L4*sin(th2))^2。
- * 设 a=2*L4*dx、b=2*L4*dy、c=L3*L3-L4*L4-dx*dx-dy*dy；
- * 用 t=tan(th2/2) 解 (a+c)*t*t-2*b*t+(c-a)=0，再由叉积选择装配解。
+ * 设 a=2*L4*dx、b=2*L4*dy、c=L3*L3-L4*L4-dx*dx-dy*dy;
+ * 用 t=tan(th2/2) 解 (a+c)*t*t-2*b*t+(c-a)=0, 再由叉积选择装配解。
  */
 FKResult fivebar_fk(float alpha, float beta) {
     FKResult r = {0};
 
-    // 计算主动关节坐标
+    // 计算主动关节 A、C 坐标 [mm]
     float sa = fsin(alpha), ca = fcos(alpha);
     float sb = fsin(beta),  cb = fcos(beta);
 
     r.A.x = L1 * ca;  r.A.y = L1 * sa;
     r.C.x = L2 * cb;  r.C.y = L2 * sb;
 
-    float dx   = r.C.x - r.A.x;    // dx = C.x - A.x
-    float dy   = r.C.y - r.A.y;    // dy = C.y - A.y
+    float dx   = r.C.x - r.A.x;    // dx: A→C 的 x 分量 [mm] = C.x - A.x
+    float dy   = r.C.y - r.A.y;    // dy: A→C 的 y 分量 [mm] = C.y - A.y
     float lac2 = dx*dx + dy*dy;
     float lac  = fsqrt(lac2);
 
-    // 校验几何可达性
+    // 校验 A、C 间距是否在 [|L3-L4|, L3+L4] 内
     float sum = L3 + L4;
     float dif = L3 > L4 ? L3 - L4 : L4 - L3;
 
@@ -135,10 +135,10 @@ FKResult fivebar_fk(float alpha, float beta) {
         return r;
     }
 
-    // 计算辅助角方程系数
-    float a = 2.0f * L4 * dx;             // a = 2*L4*dx
-    float b = 2.0f * L4 * dy;             // b = 2*L4*dy
-    float c = L3*L3 - L4*L4 - lac2;       // c = L3*L3 - L4*L4 - lac2
+    // 计算辅助角方程系数 (半角 t=tan(th2/2))
+    float a = 2.0f * L4 * dx;             // a: 半角方程系数 [mm^2] = 2*L4*dx
+    float b = 2.0f * L4 * dy;             // b: 半角方程系数 [mm^2] = 2*L4*dy
+    float c = L3*L3 - L4*L4 - lac2;       // c: 半角方程系数 [mm^2] = L3*L3 - L4*L4 - lac2
 
     float disc = a*a + b*b - c*c;
     if (disc < -EPS) {
@@ -148,12 +148,12 @@ FKResult fivebar_fk(float alpha, float beta) {
     if (disc < 0.0f) disc = 0.0f;
     float sqrt_d = fsqrt(disc);
 
-    // 用半角公式求两个 th2 候选解
+    // 用半角公式求 th2 候选解, 存入 t_cand[2]
     float t_cand[2];
     int   nc = 0;
 
     if (fabsf(a + c) < EPS) {
-        // 二次项退化时，t=(c-a)/(2*b)
+        // 二次项退化 (a+c≈0) 时, t=(c-a)/(2*b)
         // 因此 th2=2*atan2(c-a, 2*b)
         if (fabsf(b) > EPS) {
             t_cand[nc++] = 2.0f * fatan2(c - a, 2.0f * b);
@@ -167,13 +167,13 @@ FKResult fivebar_fk(float alpha, float beta) {
     }
 
     // 叉积判断候选轮心 B 与原点 O 在 AC 连线的相对侧
-    // cross_B=dx*(B.y-A.y)-dy*(B.x-A.x)，cross_O=dx*(0-A.y)-dy*(0-A.x)
-    // 异侧为肘下垂，同侧为肘上抬
+    // cross_B=dx*(B.y-A.y)-dy*(B.x-A.x), cross_O=dx*(0-A.y)-dy*(0-A.x)
+    // 异侧为肘下垂, 同侧为肘上抬
 
     // 预计算 cross_O = AC × AO (与候选解无关, 只算一次)
     float cross_O = dx * (-r.A.y) - dy * (-r.A.x);
 
-    float best_score = -1e9f;   // 用于同侧多候选时的 tiebreak
+    float best_score = -1e9f;   // 同侧多候选时的择优分数
     float best_th2   = 0.0f;
     float best_th1   = 0.0f;
     int   found      = 0;
@@ -181,16 +181,16 @@ FKResult fivebar_fk(float alpha, float beta) {
     for (int i = 0; i < nc; i++) {
         float th2 = wrap_pos(t_cand[i]);
 
-        // 回代求 th1
+        // 回代求 th1 [rad]
         float rx = dx + L4 * fcos(th2);
         float ry = dy + L4 * fsin(th2);
         float th1 = wrap_pos(fatan2(ry, rx));
 
-        // 末端坐标 (从 A 侧计算)
+        // 末端 B 坐标 [mm] (从 A 侧计算)
         float bx = r.A.x + L3 * fcos(th1);
         float by = r.A.y + L3 * fsin(th1);
 
-        // 双侧一致性校验
+        // 双侧一致性校验 (误差 > 1 mm^2 则丢弃)
         float bx2 = r.C.x + L4 * fcos(th2);
         float by2 = r.C.y + L4 * fsin(th2);
         float err = (bx - bx2)*(bx - bx2) + (by - by2)*(by - by2);
@@ -205,12 +205,12 @@ FKResult fivebar_fk(float alpha, float beta) {
 #if ASSEMBLY_MODE == 0
         // 肘下垂模式: 必须选异侧解
         if (!is_elbow_down) continue;
-        // tiebreak: 选 B.y 更大的（+Y 向下，y 越大表示轮心越低）
+        // 择优: 选 B.y 更大的 (+Y 向下, y 越大轮心越低)
         float score = by;
 #else
         // 肘上抬模式: 必须选同侧解
         if (is_elbow_down) continue;
-        // tiebreak: 选 B.y 更小的 (上抬更高)
+        // 择优: 选 B.y 更小的 (上抬更高)
         float score = -by;
 #endif
         if (score > best_score) {
@@ -229,16 +229,16 @@ FKResult fivebar_fk(float alpha, float beta) {
     r.th1 = best_th1;
     r.th2 = best_th2;
 
-    // 计算轮心坐标
+    // 计算轮心 B 坐标 [mm]
     r.B.x = r.A.x + L3 * fcos(r.th1);
     r.B.y = r.A.y + L3 * fsin(r.th1);
 
-    // 校验主动杆与从动杆夹角 (参考值: 站立 din≈145°/dpa≈107°, 最短腿实测 174.8°/114.1°)
+    // 校验主动杆与从动杆相对夹角 [rad] (参考: 站立 din≈145°/dpa≈107°, 最短腿实测 174.8°/114.1°)
     r.delta_input   = delta_input(alpha, beta);
     r.delta_passive = relative_angle(r.th1, r.th2);
 
     // 主动杆上限 178°: 最短腿位形实测 din=174.83°, 留 3.2° 余量; 180° 为翻转死点
-	//2026.10.12 23：17：jyh review感觉passive这个变量存在和筛选没意义，delta宏定义原本就不是给下面小腿的
+	// 2026.10.12 23:17 jyh review 感觉 passive 这个变量存在和筛选没意义, delta 宏定义原本就不是给下面小腿的
     if (r.delta_input   < DELTA_MIN || r.delta_input   > (178.0f * 0.01745329252f) ||
         r.delta_passive < DELTA_MIN || r.delta_passive > DELTA_MAX) {
         r.status = FK_OUT_OF_RANGE;
@@ -250,15 +250,15 @@ FKResult fivebar_fk(float alpha, float beta) {
 }
 
 /**
- * @brief  计算驱动角速度到轮心速度的雅可比
+ * @brief  由驱动角速度求轮心速度的雅可比
  * @param  alpha  第 1 个驱动角 [rad]
  * @param  beta  第 2 个驱动角 [rad]
- * @param  th1  等效杆 AB 的全局角 [rad]
- * @param  th2  等效杆 CB 的全局角 [rad]
- * @param  J  输出的 2x2 雅可比矩阵
- * @return true 表示可计算，false 表示公式分母接近零
+ * @param  th1  从动杆 AB 的全局绝对角 [rad]
+ * @param  th2  从动杆 CB 的全局绝对角 [rad]
+ * @param  J  输出 2x2 雅可比矩阵 [mm]
+ * @return true 可计算; false 分母接近零 (奇异), 此时 J 清零
  *
- * 令 s1=L1*sin(th1-alpha)、s2=L2*sin(th2-beta)。
+ * 令 s1=L1*sin(th1-alpha)、s2=L2*sin(th2-beta);
  * J=[sin(th2)*s1, -sin(th1)*s2; -cos(th2)*s1, cos(th1)*s2]/sin(th2-th1)。
  */
 bool fivebar_jacobian(float alpha, float beta, float th1, float th2, Jacobian *J)
@@ -285,7 +285,7 @@ bool fivebar_jacobian(float alpha, float beta, float th1, float th2, Jacobian *J
     return true;
 }
 
-// 按 J 的转置将轮心力映射到关节力矩
+// 按 J 的转置将轮心力 [N] 映射为关节力矩 [N*mm]
 void fivebar_force(const Jacobian *J, float Fx, float Fy, float *tau_a, float *tau_b)
 {
     *tau_a = J->j11 * Fx + J->j21 * Fy;
@@ -293,12 +293,12 @@ void fivebar_force(const Jacobian *J, float Fx, float Fy, float *tau_a, float *t
 }
 
 /**
- * @brief  依次计算正解、雅可比及两驱动关节力矩
+ * @brief  依次求正解、雅可比和两驱动关节力矩
  * @param  alpha  第 1 个驱动角 [rad]
  * @param  beta  第 2 个驱动角 [rad]
  * @param  Fx  轮心局部 x 方向力 [N]
  * @param  Fy  轮心局部 y 方向力 [N]
- * @return FKSolve，包含正解、雅可比和两关节力矩
+ * @return FKSolve, 含正解、雅可比及两关节力矩 [N*mm]
  */
 FKSolve fivebar_solve(float alpha, float beta, float Fx, float Fy)
 {

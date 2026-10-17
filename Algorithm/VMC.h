@@ -22,6 +22,8 @@
  *    仅用于喂给 fivebar_force() (直角坐标雅可比 tau = J^T * F)。
  *    直角坐标只存在于 VMC 内部, 永不越过模块边界。
  *    (F_fk_x_N/F_fk_y_N/F_tangent_N 存于 vmc_t 仅为 Keil watch 调试观测, 语义上仍是内部量)
+ *
+ *  输出 (关节层): tau_a/tau_b [N*mm] 经 VMC_TorqueAllocate() 限幅分配后下发
  * ==================================================================== */
 
 #ifndef __VMC_H
@@ -33,18 +35,18 @@
 
 #define MASS_HALF_G    70.0f
 
-//VMC参数
+// VMC 参数
 #define VMC_KP                 15.0f
 #define VMC_KD                 0.2f
 #define VMC_F_AXIS_MAX_N       250.0f
 #define TORQUE_LIMIT           30.0f
 
-//横滚环参数
+// 横滚环参数
 #define ROLL_KP                100.0f
 #define ROLL_KD                20.0f
 #define ROLL_MAX_OUT           30.0f
 
-//防劈叉环参数
+// 防劈叉环参数
 #define ANTI_SPLIT_KP          30000.0f
 #define ANTI_SPLIT_MAX         10000.0f
 #define ANTI_SPLIT_KD          2000.0f
@@ -62,16 +64,22 @@ typedef struct
     float theta_rel_body_rad;         	// 腿轴与竖直夹角 = leg_axis_angle_rad - π/2 [rad], 站立 = 0
     float L_t_dot_mm_s;     			// 腿伸缩速率 [mm/s] (虚拟弹簧阻尼项)
     float theta_rel_body_dot_rad_s;   	// 腿轴摆动速率 [rad/s] 对极角求导
-    float last_L_t_mm;
-    float last_leg_axis_angle_rad;
+    float last_L_t_mm;// 上一周期腿长 [mm]
+    float last_leg_axis_angle_rad;// 上一周期腿轴极角 [rad]
     uint8_t first_flag;     			// 首周期用当前值初始化 last_*, 防止差分算出 dt 尖峰
 
     // 力链中间量
-    float F_axis_N;         			// 期望沿腿轴力 [N] = Kp·(L_t_set_mm-L_t_mm) + Kd·(0-L_t_dot_mm_s) + MASS_HALF_G/cos(theta_rel_body_rad) + F_roll_N
-    float F_tangent_N;      			// 切向力 [N] = T_p_Nmm/L_t_mm (沿 n0)
+    float F_axis_N;         			// 期望沿腿轴力 [N] (分配前) = Kp·(L_t_set_mm-L_t_mm) + Kd·(0-L_t_dot_mm_s) + MASS_HALF_G/cos(theta_rel_body_rad) + F_roll_N
+    float F_tangent_N;      			// 切向力 [N] = T_p_Nmm/L_t_mm (沿 n0, 分配后为实际值)
     float F_fk_x_N, F_fk_y_N;       	// 直角坐标力 [N] (模块内部量, 控制层勿用)
+	
+	// 分配与限幅 (站立力矩截断变量)
+	float F_spring_N, F_gravity_N;                 /* 截断前轴向力分量: 弹簧阻尼力/重力补偿 [N], 调试观测 */
+    float F_axis_applied_N, T_p_applied_Nmm;       /* 分配后可行极坐标指令: 腿轴力/髋力矩 [N]/[N*mm], 实际下发 */
+    float tau_request_a_Nm, tau_request_b_Nm;      /* 分配前关节请求力矩 [N*m], 由 tau_a/tau_b 换算 */
+    uint8_t axis_force_limited, hip_moment_limited;// 限幅标志: 1=F_axis 被夹 / 髋力矩被等比缩小
 
-    // 输出[N·mm]
+    // 输出
     FKSolve fk_s;           			// 正解(含 A/C/B 点、th1/th2、delta 角、状态码) + 雅可比 J + 奇异标志 + tau_a/tau_b
 
     float L_t_ddot_mm_s2;   			// 腿长二阶导 (离地检测加速度补偿)
@@ -88,7 +96,7 @@ void VMC_StateUpdateWithVelocity(vmc_t *vmc, float qa, float qb,
 void VMC_ForceCalc(vmc_t *vmc, float joint_a_angle_rad, float joint_b_angle_rad);
 void VMC_TorqueAllocate(vmc_t *vmc, float torque_limit_Nm);
 
-// 力坐标变换: 极坐标 (F_axis_N,T_p_Nmm) <-> 直角坐标 (F_fk_x_N,F_fk_y_N), 与 B 同坐标系
+// 力坐标变换: 极坐标 (F_axis_N,T_p_Nmm) <-> 直角坐标 (F_fk_x_N,F_fk_y_N), 均以 B 点为原点
 void VMC_force_polar_to_cart(const Point2D *B, float F_axis_N, float T_p_Nmm,
                              float *F_fk_x_N, float *F_fk_y_N);
 void VMC_force_cart_to_polar(const Point2D *B, float F_fk_x_N, float F_fk_y_N,

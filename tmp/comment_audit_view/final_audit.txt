@@ -1,0 +1,7 @@
+==== Kinematics/forward_solution.h strip-equal=True
+  [20] line 101 NO-CJK: /* ==================================================================== |  *  API |  * ==================================================================== */
+  [22] line 124 NO-CJK: /* FORWARD_SOLUTION_H */
+
+==== Kinematics/forward_solution.c strip-equal=True
+  [27] line 170 NO-CJK: // cross_B=dx*(B.y-A.y)-dy*(B.x-A.x), cross_O=dx*(0-A.y)-dy*(0-A.x)
+

@@ -90,3 +90,4 @@ wheelleg\leg_tasks.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/mpu_wra
 wheelleg\leg_tasks.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/task.h
 wheelleg\leg_tasks.o: ../Middlewares/Third_Party/FreeRTOS/Source/include/list.h
 wheelleg\leg_tasks.o: ../Timer/dwt.h
+wheelleg\leg_tasks.o: ..\Tasks\RobotState.h

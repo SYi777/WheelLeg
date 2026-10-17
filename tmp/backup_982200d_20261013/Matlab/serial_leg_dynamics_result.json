@@ -1,0 +1,114 @@
+{
+  "status": "Single-side fixed-shape model; user-confirmed Ip, offset sign and Lt; body mass from workbook",
+  "model_scope": "one wheel + one leg + half body; equivalent five-bar transmission per user",
+  "Ip_convention": "one leg about its own center of mass; entered directly, not divided by 2; parallel-axis term added once",
+  "mass_source_note": "M=15.274/2 retained from workbook; half-body convention does not independently verify assembly mass subtraction",
+  "parameters": {
+    "R": 0.06,
+    "Lt": 0.21248,
+    "L": 0.134182,
+    "y": -0.065062,
+    "l": 0.043437,
+    "mw": 0.135,
+    "mp": 1.255,
+    "M": 7.637,
+    "Iw": 0.000388967,
+    "Ip": 0.1466,
+    "IM": 0.16385,
+    "g": 9.81
+  },
+  "state_equilibrium": [
+    0.04555633026588117,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0
+  ],
+  "input_equilibrium": [
+    0.0,
+    -0.0
+  ],
+  "A": [
+    [
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      105.18468082429239,
+      0.0,
+      0.0,
+      0.0,
+      0.6208958877156988,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      -20.523109949801327,
+      0.0,
+      -0.0,
+      0.0,
+      0.5898358597774787,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    [
+      3.3558983976141192,
+      0.0,
+      0.0,
+      0.0,
+      19.598639279680285,
+      0.0
+    ]
+  ],
+  "B": [
+    [
+      0.0,
+      0.0
+    ],
+    [
+      -25.427028622657833,
+      6.170928205529868
+    ],
+    [
+      0.0,
+      0.0
+    ],
+    [
+      6.917899498608305,
+      -0.9855630883824753
+    ],
+    [
+      0.0,
+      0.0
+    ],
+    [
+      2.8300489440867125,
+      6.213260271276024
+    ]
+  ],
+  "checks": {
+    "newton_euler_max_abs_residual": 2.7533531010703882e-14,
+    "finite_difference_max_abs_error": 7.065779072945588e-10,
+    "zero_offset_equilibrium": "passed"
+  },
+  "controllability_rank": 6
+}

@@ -1,6 +1,6 @@
 /**
 *@file Leg_Tasks.h
-*@brief å·¦å³è…¿æ§åˆ¶ä»»åŠ¡åŠæ¨ªæ»šã€é˜²åŠˆå‰æ¥å£
+*@brief ×óÓÒÍÈ¿ØÖÆÈÎÎñ¼°ºá¹ö¡¢·ÀÅü²æ½Ó¿Ú
 *@Author SYi777
 *@Email jyh1621839418@163.com
 *@Date 2026/9/30
@@ -14,29 +14,29 @@
 #include "pid.h"
 
 #define M_PI 3.1415926f
-//å®‰å…¨åŒºé—´å®šä¹‰
+// °²È«½Ç¶ÈÇø¼ä[rad]
 #define MAX_DELTA (M_PI-0.2f)
 #define MIN_DELTA (M_PI/2-0.1f)
-//pid å¸¸é‡å®šä¹‰
+// ½Ç¶È»· PID ³£Á¿
 #define PID_MAX_OUT 30.0f
 #define PID_MAX_IOUT 5.0f
 #define PID_P 25.0f
 #define PID_I 0.0f
 #define PID_D 10.0f
-//å·¦è…¿ç”µæœºæ§åˆ¶ç»“æ„ä½“å®šä¹‰ï¼ŒåŒ…å«å†…å®¹nopowerflagï¼Œtffoutï¼Œå½“å‰è§’åº¦ï¼Œç›®æ ‡è§’åº¦ï¼Œpidæ§åˆ¶ç»“æ„ä½“
+// ×óÍÈ¿ØÖÆ½á¹¹Ìå: µç»ú½Ç¶È·´À¡¡¢Ä¿±ê½Ç¶ÈÓë½Ç¶È»· PID
 typedef struct
 {
-	//æ¥è‡ªç”µæœºçš„å€¼ï¼Œç”¨äºåˆå§‹åŒ–
+	// µç»ú½Ç¶È·´À¡Ö¸Õë, ³õÊ¼»¯Ê±°ó¶¨
 	const fp32 *AnglePoint;
 	
-	//è§’åº¦
+	// µ±Ç°ÓëÄ¿±ê¾ø¶Ô½Ç¶È[rad]
 	fp32 Now_AbsoluteAngle;
 	fp32 Wanted_AbsoluteAngle;
 	
-	//PID
+	// ½Ç¶È»· PID
 	pid_type_def angle_pid;
 	
-	//control
+	// Á¦¾ØÊä³ö[N¡¤m] Óëµôµç±êÖ¾
 	int16_t Torque_out;
 	uint8_t noPowerflag;
 }LeftLegCtrl_s;

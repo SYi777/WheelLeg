@@ -1,0 +1,431 @@
+===== tmp/backup_982200d_20261013/Applications/8009_CtrlApplications.c =====
+   1|/**
+   2|*@file 8009_Ctrl_Applications.c
+   3|*@brief 瀵归�愪釜8009鐨勭數鏈鸿繘琛屽姛鑳戒緥鍖�
+   4|*@Author SYi777
+   5|*@Email jyh1621839418@163.com
+   6|*@Date 2026-6-5
+   7|**/
+   8|#include "8009_CtrlApplications.h"
+   9|
+  10|DM_Motor DM8009_Ctrl[4];
+  11|
+  12|void DM_8009Motor_Init(DM_Motor *motor, uint8_t can_id)
+  13|{
+  14|    if (motor == NULL) return;
+  15|    motor->can_id          = can_id;
+  16|    motor->online          = 0;
+  17|    motor->rx_cnt          = 0;
+  18|    motor->tx_cnt          = 0;
+  19|    motor->last_fb_tick    = 0;
+  20|    motor->last_cmd_tick   = 0;
+  21|    motor->last_tx_status  = HAL_OK;
+  22|    //cmd娓呴浂
+  23|    motor->cmd.p_des = 0;
+  24|    motor->cmd.v_des = 0;
+  25|    motor->cmd.kp    = 0;
+  26|    motor->cmd.kd    = 0;
+  27|    motor->cmd.t_ff  = 0;
+  28|    //fb娓呴浂
+  29|    motor->fb.pos_raw   = 0;
+  30|    motor->fb.vel_raw   = 0;
+  31|    motor->fb.tor_raw   = 0;
+  32|    motor->fb.err       = 0;
+  33|    motor->fb.motor_id  = 0;
+  34|    motor->fb.t_mos     = 0;
+  35|    motor->fb.t_rotor   = 0;
+  36|    motor->fb.position  = 0.0f;
+  37|    motor->fb.velocity  = 0.0f;
+  38|    motor->fb.torque    = 0.0f;
+  39|    motor->fb.enabled   = 0;
+  40|    motor->fb.fault     = 0;
+  41|    motor->fb.fault_code = DM_FAULT_NONE;
+  42|}
+  43|//涓嶅寘鍚�鍙戦�佸懡浠わ紝鐢卞叾浠栧嚱鏁扮粺涓�鍙戦��
+  44|// MIT鍔涚煩鐜�
+  45|void Set_LeftOneTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff)
+  46|{
+  47|	DM_MITCtrl(&DM8009_Ctrl[0],0.0f,0.0f,0.0f,0.0f,t_ff);
+  48|}
+  49|void Set_LeftTwoTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff)
+  50|{
+  51|	DM_MITCtrl(&DM8009_Ctrl[1],0.0f,0.0f,0.0f,0.0f,t_ff);
+  52|}
+  53|void Set_RightOneTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff)
+  54|{
+  55|	DM_MITCtrl(&DM8009_Ctrl[2],0.0f,0.0f,0.0f,0.0f,t_ff);
+  56|}
+  57|void Set_RightTwoTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff)
+  58|{
+  59|	DM_MITCtrl(&DM8009_Ctrl[3],0.0f,0.0f,0.0f,0.0f,t_ff);
+  60|}
+  61|//MIT浣嶇疆鐜�
+  62|void Set_LeftOnePositionMIT(FDCAN_HandleTypeDef *hfdcan, DM_Motor *g_motor, float pos)
+  63|{
+  64|    DM_MITCtrl(&DM8009_Ctrl[0], pos, 0.0f, 10.0f, 2.0f, 0.0f);
+  65|}
+  66|// 宸﹀悗
+  67|void Set_LeftTwoPositionMIT(FDCAN_HandleTypeDef *hfdcan, DM_Motor *g_motor, float pos)
+  68|{
+  69|    DM_MITCtrl(&DM8009_Ctrl[1], pos, 0.0f, 10.0f, 2.0f, 0.0f);
+  70|}
+  71|// 鍙冲墠
+  72|void Set_RightOnePositionMIT(FDCAN_HandleTypeDef *hfdcan, DM_Motor *g_motor, float pos)
+  73|{
+  74|    DM_MITCtrl(&DM8009_Ctrl[2], pos, 0.0f, 10.0f, 2.0f, 0.0f);
+  75|}
+  76|// 鍙冲悗
+  77|void Set_RightTwoPositionMIT(FDCAN_HandleTypeDef *hfdcan, DM_Motor *g_motor, float pos)
+  78|{
+  79|    DM_MITCtrl(&DM8009_Ctrl[3], pos, 0.0f, 10.0f, 2.0f, 0.0f);
+  80|}
+===== tmp/backup_982200d_20261013/Applications/DM_motor.c =====
+   1|/**
+   2|*@file DM_motor.c
+   3|*@brief 杈惧�橠M-J8009P-2EC鐢垫満椹卞姩
+   4|*@Author SYi777
+   5|*@Email jyh1621839418@163.com
+   6|*@Date 2026-6-4
+   7|**/
+   8|#include "DM_motor.h"
+   9|#include "8009_CtrlApplications.h"
+  10|#include "3508_CtrlApplications.h"
+  11|#include "FreeRTOS.h"
+  12|#include "task.h"
+  13|
+  14|void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
+  15|{
+  16|    if (RxFifo0ITs & FDCAN_IT_RX_FIFO0_NEW_MESSAGE)
+  17|    {
+  18|        FDCAN_RxHeaderTypeDef RxHeader;
+  19|        uint8_t RxData[8];
+  20|        
+  21|        while (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
+  22|        {
+  23|            //鏍规嵁鍙嶉�圛D鍖归厤鐢垫満锛圝8009鍙嶉�圛D = 0x10 + 鐢垫満ID锛�
+  24|            switch(RxHeader.Identifier)
+  25|            {
+  26|                case 0x11: //宸﹀墠鐢垫満锛圛D=1锛�
+  27|                    DM_UnpackFb(RxData, &DM8009_Ctrl[0].fb);
+  28|                    DM8009_Ctrl[0].online = 1;
+  29|                    DM8009_Ctrl[0].last_fb_tick = HAL_GetTick();
+  30|                    DM8009_Ctrl[0].rx_cnt++;
+  31|                    break;
+  32|                    
+  33|                case 0x12: //宸﹀悗鐢垫満锛圛D=2锛�
+  34|                    DM_UnpackFb(RxData, &DM8009_Ctrl[1].fb);
+  35|                    DM8009_Ctrl[1].online = 1;
+  36|                    DM8009_Ctrl[1].last_fb_tick = HAL_GetTick();
+  37|                    DM8009_Ctrl[1].rx_cnt++;
+  38|                    break;
+  39|                    
+  40|                case 0x13: //鍙冲墠鐢垫満锛圛D=3锛�
+  41|                    DM_UnpackFb(RxData, &DM8009_Ctrl[2].fb);
+  42|                    DM8009_Ctrl[2].online = 1;
+  43|                    DM8009_Ctrl[2].last_fb_tick = HAL_GetTick();
+  44|                    DM8009_Ctrl[2].rx_cnt++;
+  45|                    break;
+  46|                    
+  47|                case 0x14: //鍙冲悗鐢垫満锛圛D=4锛�
+  48|                    DM_UnpackFb(RxData, &DM8009_Ctrl[3].fb);
+  49|                    DM8009_Ctrl[3].online = 1;
+  50|                    DM8009_Ctrl[3].last_fb_tick = HAL_GetTick();
+  51|                    DM8009_Ctrl[3].rx_cnt++;
+  52|                    break;
+  53|                    
+  54|				case CAN_3508_ML_ID:// 0x201 宸﹁疆
+  55|					get_motor_measure(&motor_measure_L, RxData);
+  56|                    wheel_drive_diag.last_fb_tick[0] = HAL_GetTick();
+  57|                    wheel_drive_diag.rx_cnt[0]++;
+  58|                    break;
+  59|				
+  60|                case CAN_3508_MR_ID:// 0x202 鍙宠疆
+  61|                    get_motor_measure(&motor_measure_R, RxData);
+  62|                    wheel_drive_diag.last_fb_tick[1] = HAL_GetTick();
+  63|                    wheel_drive_diag.rx_cnt[1]++;
+  64|                    break;
+  65|				
+  66|                default:
+  67|                    break;
+  68|            }
+  69|        }
+  70|    }
+  71|}
+  72|//MIT鍛戒护鎵撳寘
+  73|void DM_PackMITCmd(const DM_Command *cmd, uint8_t data[8])
+  74|{
+  75|    uint16_t p  = cmd->p_des;
+  76|    uint16_t v  = cmd->v_des & 0x0FFF;
+  77|    uint16_t kp = cmd->kp    & 0x0FFF;
+  78|    uint16_t kd = cmd->kd    & 0x0FFF;
+  79|    uint16_t t  = cmd->t_ff  & 0x0FFF;
+  80|
+  81|    // D0 = p_des[15:8] 楂樺瓧鑺�
+  82|    data[0] = (p >> 8) & 0xFF;
+  83|    // D1 = p_des[7:0] 浣庡瓧鑺�
+  84|    data[1] = p & 0xFF;
+  85|
+  86|    // D2 = v_des[11:4]
+  87|    data[2] = (v >> 4) & 0xFF;
+  88|    // D3 = v_des[3:0] <<4 | Kp[11:8]
+  89|    data[3] = ((v & 0x0F) << 4) | ((kp >> 8) & 0x0F);
+  90|
+  91|    // D4 = Kp[7:0]
+  92|    data[4] = kp & 0xFF;
+  93|
+  94|    // D5 = Kd[11:4]
+  95|    data[5] = (kd >> 4) & 0xFF;
+  96|    // D6 = Kd[3:0] <<4 | t_ff[11:8]
+  97|    data[6] = ((kd & 0x0F) << 4) | ((t >> 8) & 0x0F);
+  98|    // D7 = t_ff[7:0]
+  99|    data[7] = t & 0xFF;
+ 100|}
+ 101|//瑙ｅ寘
+ 102|void DM_UnpackFb(const uint8_t data[8], DM_state *fb)
+ 103|{
+ 104|    fb->motor_id = data[0] & 0x0F;
+ 105|    fb->err      = data[0] >> 4;
+ 106|    fb->enabled    = (fb->err == 1) ? 1 : 0;
+ 107|    fb->fault_code = (DM_FaultCode)fb->err;
+ 108|    fb->fault      = (fb->err > 0x01) ? 1 : 0;
+ 109|
+ 110|    fb->pos_raw = (uint16_t)((data[1] << 8) | data[2]);
+ 111|    fb->vel_raw = (uint16_t)((data[3] << 4) | ((data[4] >> 4) & 0x0F));
+ 112|    fb->tor_raw = (uint16_t)(((data[4] & 0x0F) << 8) | data[5]);
+ 113|
+ 114|    fb->t_mos   = data[6];
+ 115|    fb->t_rotor = data[7];
+ 116|
+ 117|    fb->position = uint_to_float((int)fb->pos_raw, DM_POS_MIN, DM_POS_MAX, 16);
+ 118|    fb->velocity = uint_to_float((int)fb->vel_raw, DM_VEL_MIN, DM_VEL_MAX, 12);
+ 119|    fb->torque   = uint_to_float((int)fb->tor_raw, DM_TOR_MIN, DM_TOR_MAX, 12);
+ 120|	
+ 121|	if(fb->position < 0)
+ 122|	{
+ 123|		fb->processed_pos = fb->position + 2*3.1415926f;
+ 124|	}
+ 125|	else
+ 126|	{
+ 127|		fb->processed_pos = fb->position;
+ 128|	}
+ 129|}
+ 130|// 鎺у埗甯у彂閫佸嚱鏁帮紝杩斿洖鍙戦�佺姸鎬�
+ 131|HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
+ 132|{
+ 133|	FDCAN_TxHeaderTypeDef tx_header;
+ 134|	uint8_t data[8];
+ 135|	DM_PackMITCmd(&m->cmd,data);
+ 136|	tx_header.Identifier          = m->can_id;
+ 137|    tx_header.IdType              = FDCAN_STANDARD_ID;
+ 138|    tx_header.TxFrameType         = FDCAN_DATA_FRAME;
+ 139|    tx_header.DataLength          = FDCAN_DLC_BYTES_8;
+ 140|    tx_header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+ 141|    tx_header.BitRateSwitch       = FDCAN_BRS_OFF;
+ 142|    tx_header.FDFormat            = FDCAN_CLASSIC_CAN;
+ 143|    tx_header.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
+ 144|    tx_header.MessageMarker       = 0;
+ 145|	HAL_StatusTypeDef st;
+ 146|	taskENTER_CRITICAL();
+ 147|	st = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan,&tx_header,data);
+ 148|	taskEXIT_CRITICAL();
+ 149|	if(st == HAL_OK)
+ 150|	{
+ 151|		m->tx_cnt++;
+ 152|		m->last_cmd_tick = HAL_GetTick();
+ 153|	}
+ 154|	m->last_tx_status = st;
+ 155|	return st;
+ 156|}
+ 157|//绯荤粺鍛戒护甯у彂閫佸嚱鏁�
+ 158|static HAL_StatusTypeDef DM_SendSysCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m,const uint8_t data[8])
+ 159|{
+ 160|    FDCAN_TxHeaderTypeDef tx_header = {0};
+ 161|    tx_header.Identifier          = m->can_id;
+ 162|    tx_header.IdType              = FDCAN_STANDARD_ID;
+ 163|    tx_header.TxFrameType         = FDCAN_DATA_FRAME;
+ 164|    tx_header.DataLength          = FDCAN_DLC_BYTES_8;
+ 165|    tx_header.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
+ 166|    tx_header.BitRateSwitch       = FDCAN_BRS_OFF;
+ 167|    tx_header.FDFormat            = FDCAN_CLASSIC_CAN;
+ 168|    tx_header.TxEventFifoControl  = FDCAN_NO_TX_EVENTS;
+ 169|    tx_header.MessageMarker       = 0;
+ 170|    HAL_StatusTypeDef st;
+ 171|    taskENTER_CRITICAL();
+ 172|    st = HAL_FDCAN_AddMessageToTxFifoQ(hfdcan, &tx_header, data);
+ 173|    taskEXIT_CRITICAL();
+ 174|    return st;
+ 175|}
+ 176|//浣胯兘鐢垫満
+ 177|HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
+ 178|{
+ 179|    uint8_t data[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
+ 180|    HAL_StatusTypeDef st = DM_SendSysCmd(hfdcan, m, data);
+ 181|    m->last_tx_status = st;
+ 182|    return st;
+ 183|}
+ 184|//澶辫兘鐢垫満
+ 185|void DM_Disable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
+ 186|{
+ 187|    uint8_t data[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
+ 188|    DM_SendSysCmd(hfdcan, m, data);
+ 189|}
+ 190|//MIT
+ 191|void DM_MITCtrl(DM_Motor *m, float pos, float vel, float kp, float kd, float t_ff)
+ 192|{
+ 193|    if (kp < DM_KP_MIN) kp = DM_KP_MIN;
+ 194|    if (kp > DM_KP_MAX) kp = DM_KP_MAX;
+ 195|    if (kd < DM_KD_MIN) kd = DM_KD_MIN;
+ 196|    if (kd > DM_KD_MAX) kd = DM_KD_MAX;
+ 197|    if (t_ff > DM_TOR_MAX) t_ff = DM_TOR_MAX;
+ 198|    if (t_ff < DM_TOR_MIN) t_ff = DM_TOR_MIN;
+ 199|	
+ 200|    m->cmd.p_des = float_to_uint(pos, DM_POS_MIN, DM_POS_MAX, 16);
+ 201|    m->cmd.v_des = float_to_uint(vel, DM_VEL_MIN, DM_VEL_MAX, 12);
+ 202|    m->cmd.kp = float_to_uint(kp, DM_KP_MIN, DM_KP_MAX, 12);
+ 203|    m->cmd.kd = float_to_uint(kd, DM_KD_MIN, DM_KD_MAX, 12);
+ 204|    m->cmd.t_ff = float_to_uint(t_ff, DM_TOR_MIN, DM_TOR_MAX, 12);
+ 205|}
+ 206|//鍋滆浆
+ 207|void DM_CtrlStop(DM_Motor *m)
+ 208|{
+ 209|    m->cmd.p_des = float_to_uint(0.0f, DM_POS_MIN, DM_POS_MAX, 16);
+ 210|    m->cmd.v_des = float_to_uint(0.0f, DM_VEL_MIN, DM_VEL_MAX, 12);
+ 211|    m->cmd.kp = 0;
+ 212|    m->cmd.kd = 0;
+ 213|    m->cmd.t_ff = float_to_uint(0.0f, DM_TOR_MIN, DM_TOR_MAX, 12);
+ 214|}
+===== tmp/backup_982200d_20261013/Applications/DM_motor.h =====
+   1|/**
+   2|*@file DM_motor.h
+   3|*@brief 杈惧�橠M-J8009P-2EC鐢垫満椹卞姩
+   4|*@Author SYi777
+   5|*@Email jyh1621839418@163.com
+   6|*@Date 2026-6-3
+   7|*
+   8|*閫氫俊鍗忚��锛氭爣鍑咰AN锛�1Mbps
+   9|*鎺у埗甯� ID = 鐢垫満 CAN ID
+  10|*鍙嶉�堝抚 ID = MASTER ID(0)
+  11|*锛侊紒锛侊紒閫嗘椂閽堜负姝ｏ紒锛侊紒锛�
+  12|*
+  13|*MIT 鎺у埗甯ф牸寮忥細
+  14|* D[0] : p_des(high 8)
+  15|* D[1] : p_des(low  8)
+  16|* D[2] : v_des(high 8)
+  17|* D[3] : v_des(low  4) + Kp(high 4)
+  18|* D[4] : Kp(low  8)
+  19|* D[5] : Kd(high 8)
+  20|* D[6] : Kd(low  4) + t_ff(high 4)
+  21|* D[7] : t_ff(low  8)
+  22|*
+  23|*鍙嶉�堝抚鏍煎紡锛�
+  24|*
+  25|* D[0] : ERR(normal=0)+ID(鍚�4浣�)
+  26|* D[1] : POS(high 8)
+  27|* D[2] : POS(low  8)
+  28|* D[3] : VEL(high 8)
+  29|* D[4] : VEL(low  4) + T(high 4)
+  30|* D[5] : T(鎵�鐭�)
+  31|* D[6] : T_MOS
+  32|* D[7] : T_Rotor
+  33|*
+  34|**/
+  35|#ifndef __DM_MOTOR_H
+  36|#define __DM_MOTOR_H
+  37|#include "fdcan.h"
+  38|#include <string.h>
+  39|
+  40|#define DM_ENCODER_BITS 14
+  41|#define DM_ENCODER_RESOLUTION (1 << DM_ENCODER_BITS) //16384
+  42|// MIT params
+  43|#define DM_POS_MIN (-3.1415926f)
+  44|#define DM_POS_MAX (3.1415926f)
+  45|#define DM_VEL_MIN (-45.0f)
+  46|#define DM_VEL_MAX (45.0f)
+  47|#define DM_TOR_MIN (-54.0f)
+  48|#define DM_TOR_MAX (54.0f)
+  49|#define DM_KP_MIN	0.0f
+  50|#define DM_KP_MAX	500.0f
+  51|#define DM_KD_MIN	0.0f
+  52|#define DM_KD_MAX	5.0f
+  53|// timeout
+  54|#define DM_COMM_TIMEOUT_MS 200
+  55|// error code
+  56|typedef enum
+  57|{
+  58|    DM_FAULT_NONE        = 0x0,   // 鏃犳晠闅�
+  59|    DM_FAULT_OVERVOLT    = 0x8,   // 瓒呭帇
+  60|    DM_FAULT_UNDERVOLT   = 0x9,   // 娆犲帇
+  61|    DM_FAULT_OVERCURR    = 0xA,   // 杩囩數娴�
+  62|    DM_FAULT_MOS_OVERT   = 0xB,   // MOS 杩囨俯
+  63|    DM_FAULT_COIL_OVERT  = 0xC,   // 绾垮湀杩囨俯
+  64|    DM_FAULT_COMM_LOSS   = 0xD,   // 閫氳��涓㈠け
+  65|    DM_FAULT_OVERLOAD    = 0xE,   // 杩囪浇
+  66|}DM_FaultCode;
+  67|// 鐢垫満鐘舵��
+  68|typedef struct
+  69|{
+  70|	// raw
+  71|	uint16_t pos_raw;
+  72|	uint16_t vel_raw;
+  73|	uint16_t tor_raw;
+  74|	uint8_t err;
+  75|	uint8_t motor_id;
+  76|	uint8_t t_mos;
+  77|	uint8_t t_rotor;
+  78|	// true
+  79|	float position;		//rad
+  80|	float velocity;		//rad
+  81|	float torque;		//Nm
+  82|	float processed_pos;//rad in 2pi锛屽�勭悊鍚庣殑0鍒�2PI鐨勭粷瀵硅�掑害锛屾柟渚垮仛浣嶇疆鐜�
+  83|	// state flag
+  84|	uint8_t enabled;	//err = 0
+  85|	uint8_t fault;		//err > 1
+  86|	uint8_t fault_code;
+  87|}DM_state;
+  88|// 鍛戒护
+  89|typedef struct {
+  90|    // raw
+  91|    uint16_t  p_des;         // 鐩�鏍囦綅缃�
+  92|    uint16_t  v_des;         // 鐩�鏍囬�熷害
+  93|    uint16_t kp;            // 浣嶇疆姣斾緥
+  94|    uint16_t kd;            // 閫熷害闃诲凹
+  95|    uint16_t  t_ff;          // 鍓嶉�堟壄鐭�
+  96|} DM_Command;
+  97|typedef struct {
+  98|    uint8_t      can_id;           // 鐢垫満 CAN ID
+  99|    DM_Command   cmd;              // 寰呭彂閫佸懡浠�
+ 100|    DM_state	 fb;               // 鏈�鏂板弽棣�
+ 101|    uint32_t     last_fb_tick;     // 涓婃�℃敹鍒板弽棣堢殑鏃堕棿鎴�
+ 102|    uint32_t     last_cmd_tick;    // 涓婃�″彂閫佸懡浠ょ殑鏃堕棿鎴�
+ 103|    uint8_t      online;           // 鍦ㄧ嚎鏍囧織
+ 104|    uint32_t     rx_cnt;           // 鏀跺寘璁℃暟
+ 105|    uint32_t     tx_cnt;           // 鍙戝寘璁℃暟
+ 106|    HAL_StatusTypeDef last_tx_status; // 涓婃�″彂閫佺粨鏋�
+ 107|} DM_Motor;
+ 108|
+ 109|void DM_PackMITCmd(const DM_Command *cmd, uint8_t data[8]);
+ 110|void DM_UnpackFb(const uint8_t data[8], DM_state *fb);
+ 111|HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
+ 112|
+ 113|//鐢垫満浣胯兘
+ 114|HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
+ 115|//鐢垫満鍏抽棴
+ 116|void DM_Disable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
+ 117|//MIT
+ 118|void DM_MITCtrl(DM_Motor *m, float pos, float vel, float kp, float kd, float t_ff);
+ 119|//鍋滆浆
+ 120|void DM_CtrlStop(DM_Motor *m);
+ 121|
+ 122|//宸ュ叿鍑芥暟锛屾暟鎹�杞�鎹�
+ 123|static inline int float_to_uint(float x_float, float x_min, float x_max, int bits)
+ 124|{
+ 125|    float span = x_max - x_min;
+ 126|    return (int)((x_float - x_min) * ((float)((1 << bits) - 1)) / span);
+ 127|}
+ 128|
+ 129|static inline float uint_to_float(int x_int, float x_min, float x_max, int bits)
+ 130|{
+ 131|    float span = x_max - x_min;
+ 132|    return ((float)x_int) * span / ((float)((1 << bits) - 1)) + x_min;
+ 133|}
+ 134|#endif

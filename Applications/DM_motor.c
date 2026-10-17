@@ -1,6 +1,6 @@
 /**
 *@file DM_motor.c
-*@brief è¾¾å¦™DM-J8009P-2ECç”µæœºé©±åŠ¨
+*@brief ´ïÃî DM-J8009P-2EC µç»úÇý¶¯
 *@Author SYi777
 *@Email jyh1621839418@163.com
 *@Date 2026-6-4
@@ -12,12 +12,12 @@
 #include "task.h"
 
 /**
- * @brief  è§£æž FDCAN FIFO0 ä¸­çš„é«‹ç”µæœºä¸Žè½®ç”µæœºåé¦ˆ
- * @param  hfdcan  è§¦å‘æŽ¥æ”¶å›žè°ƒçš„ CAN å¥æŸ„
- * @param  RxFifo0ITs  FIFO0 ä¸­æ–­äº‹ä»¶æ ‡å¿—
- * @return æ— 
+ * @brief  ½âÎö FDCAN FIFO0 ÖÐµÄ÷Åµç»úÓëÂÖµç»ú·´À¡Ö¡
+ * @param  hfdcan  ´¥·¢½ÓÊÕ»Øµ÷µÄ FDCAN ¾ä±ú
+ * @param  RxFifo0ITs  FIFO0 ÖÐ¶ÏÊÂ¼þ±êÖ¾
+ * @return ÎÞ
  *
- * æ ¹æ®åé¦ˆå¸§ ID æ›´æ–°å¯¹åº”ç”µæœºçŠ¶æ€ä¸ŽæŽ¥æ”¶è®¡æ•°ã€‚
+ * ¸ù¾Ý·´À¡Ö¡ ID ¸üÐÂ¶ÔÓ¦µç»úµÄ·´À¡¡¢ÔÚÏß±êÖ¾Óë½ÓÊÕ¼ÆÊý¡£
  */
 void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
 {
@@ -28,44 +28,44 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
         
         while (HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO0, &RxHeader, RxData) == HAL_OK)
         {
-            // æ ¹æ®åé¦ˆ ID åŒ¹é…ç”µæœºï¼ˆJ8009 åé¦ˆ ID = 0x10 + ç”µæœº IDï¼‰
+            // °´·´À¡ ID Æ¥Åäµç»ú£ºJ8009 ·´À¡ ID = 0x10 + µç»ú ID
             switch(RxHeader.Identifier)
             {
-                case 0x11: // å·¦å‰ç”µæœºï¼ˆID=1ï¼‰
+                case 0x11: // ×óÇ°µç»ú£¨ID=1£©
                     DM_UnpackFb(RxData, &DM8009_Ctrl[0].fb);
                     DM8009_Ctrl[0].online = 1;
                     DM8009_Ctrl[0].last_fb_tick = HAL_GetTick();
                     DM8009_Ctrl[0].rx_cnt++;
                     break;
                     
-                case 0x12: // å·¦åŽç”µæœºï¼ˆID=2ï¼‰
+                case 0x12: // ×óºóµç»ú£¨ID=2£©
                     DM_UnpackFb(RxData, &DM8009_Ctrl[1].fb);
                     DM8009_Ctrl[1].online = 1;
                     DM8009_Ctrl[1].last_fb_tick = HAL_GetTick();
                     DM8009_Ctrl[1].rx_cnt++;
                     break;
                     
-                case 0x13: // å³å‰ç”µæœºï¼ˆID=3ï¼‰
+                case 0x13: // ÓÒÇ°µç»ú£¨ID=3£©
                     DM_UnpackFb(RxData, &DM8009_Ctrl[2].fb);
                     DM8009_Ctrl[2].online = 1;
                     DM8009_Ctrl[2].last_fb_tick = HAL_GetTick();
                     DM8009_Ctrl[2].rx_cnt++;
                     break;
                     
-                case 0x14: // å³åŽç”µæœºï¼ˆID=4ï¼‰
+                case 0x14: // ÓÒºóµç»ú£¨ID=4£©
                     DM_UnpackFb(RxData, &DM8009_Ctrl[3].fb);
                     DM8009_Ctrl[3].online = 1;
                     DM8009_Ctrl[3].last_fb_tick = HAL_GetTick();
                     DM8009_Ctrl[3].rx_cnt++;
                     break;
                     
-				case CAN_3508_ML_ID:// 0x201 å·¦è½®
+				case CAN_3508_ML_ID:// 0x201 ×óÂÖ
 					get_motor_measure(&motor_measure_L, RxData);
                     wheel_drive_diag.last_fb_tick[0] = HAL_GetTick();
                     wheel_drive_diag.rx_cnt[0]++;
                     break;
 				
-                case CAN_3508_MR_ID:// 0x202 å³è½®
+                case CAN_3508_MR_ID:// 0x202 ÓÒÂÖ
                     get_motor_measure(&motor_measure_R, RxData);
                     wheel_drive_diag.last_fb_tick[1] = HAL_GetTick();
                     wheel_drive_diag.rx_cnt[1]++;
@@ -78,10 +78,10 @@ void HAL_FDCAN_RxFifo0Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t RxFifo0ITs)
     }
 }
 /**
- * @brief  å°† DM ç”µæœº MIT æŒ‡ä»¤æ‰“åŒ…æˆ 8 å­—èŠ‚æŽ§åˆ¶å¸§
- * @param  cmd  å·²é‡åŒ–çš„ MIT æŽ§åˆ¶æŒ‡ä»¤
- * @param  data  è¾“å‡ºçš„ 8 å­—èŠ‚ CAN æ•°æ®
- * @return æ— 
+ * @brief  ½« MIT ¿ØÖÆÖ¸Áî´ò°üÎª 8 ×Ö½Ú CAN ¿ØÖÆÖ¡
+ * @param  cmd  ÒÑÁ¿»¯µÄ MIT ¿ØÖÆÖ¸Áî
+ * @param  data  Êä³ö 8 ×Ö½Ú CAN Êý¾Ý
+ * @return ÎÞ
  */
 void DM_PackMITCmd(const DM_Command *cmd, uint8_t data[8])
 {
@@ -91,14 +91,14 @@ void DM_PackMITCmd(const DM_Command *cmd, uint8_t data[8])
     uint16_t kd = cmd->kd    & 0x0FFF;
     uint16_t t  = cmd->t_ff  & 0x0FFF;
 
-    // D0 = p_des[15:8] é«˜å­—èŠ‚
+    // D0 = p_des[15:8]£¬¸ß×Ö½Ú
     data[0] = (p >> 8) & 0xFF;
-    // D1 = p_des[7:0] ä½Žå­—èŠ‚
+    // D1 = p_des[7:0]£¬µÍ×Ö½Ú
     data[1] = p & 0xFF;
 
     // D2 = v_des[11:4]
     data[2] = (v >> 4) & 0xFF;
-    // D3 = v_des[3:0] <<4 | Kp[11:8]
+    // D3 = v_des[3:0] << 4 | Kp[11:8]
     data[3] = ((v & 0x0F) << 4) | ((kp >> 8) & 0x0F);
 
     // D4 = Kp[7:0]
@@ -106,18 +106,18 @@ void DM_PackMITCmd(const DM_Command *cmd, uint8_t data[8])
 
     // D5 = Kd[11:4]
     data[5] = (kd >> 4) & 0xFF;
-    // D6 = Kd[3:0] <<4 | t_ff[11:8]
+    // D6 = Kd[3:0] << 4 | t_ff[11:8]
     data[6] = ((kd & 0x0F) << 4) | ((t >> 8) & 0x0F);
     // D7 = t_ff[7:0]
     data[7] = t & 0xFF;
 }
 /**
- * @brief  è§£æž DM ç”µæœºçš„ 8 å­—èŠ‚åé¦ˆå¸§
- * @param  data  æ”¶åˆ°çš„ 8 å­—èŠ‚ CAN æ•°æ®
- * @param  fb  è¾“å‡ºçš„ç”µæœºåé¦ˆçŠ¶æ€
- * @return æ— 
+ * @brief  ½âÎö DM µç»ú 8 ×Ö½Ú·´À¡Ö¡
+ * @param  data  ÊÕµ½µÄ 8 ×Ö½Ú CAN Êý¾Ý
+ * @param  fb  Êä³öµÄµç»ú·´À¡×´Ì¬
+ * @return ÎÞ
  *
- * ä½ç½®æ¢ç®—åŽçš„ processed_pos å½’ç®—åˆ°éžè´Ÿè§’åº¦ã€‚
+ * ½«Ô­Ê¼±àÂëÖµ»»ËãÎªÎïÀíÁ¿£¬processed_pos ¹éËãµ½·Ç¸º½Ç¶È¡£
  */
 void DM_UnpackFb(const uint8_t data[8], DM_state *fb)
 {
@@ -148,10 +148,10 @@ void DM_UnpackFb(const uint8_t data[8], DM_state *fb)
 	}
 }
 /**
- * @brief  å‘é€ä¸€å° DM ç”µæœºçš„ MIT æŽ§åˆ¶å¸§å¹¶è®°å½•å‘é€çŠ¶æ€
- * @param  hfdcan  é«‹ç”µæœº CAN å¥æŸ„
- * @param  m  ç›®æ ‡ç”µæœºå¯¹è±¡
- * @return HAL å‘é€çŠ¶æ€
+ * @brief  ·¢ËÍÒ»Ì¨ DM µç»úµÄ MIT ¿ØÖÆÖ¡£¬²¢¼ÇÂ¼·¢ËÍ×´Ì¬
+ * @param  hfdcan  CAN ¾ä±ú
+ * @param  m  Ä¿±êµç»ú¶ÔÏó
+ * @return HAL ·¢ËÍ×´Ì¬
  */
 HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 {
@@ -180,11 +180,11 @@ HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 	return st;
 }
 /**
- * @brief  å‘é€ä¸€å° DM ç”µæœºçš„ç³»ç»Ÿå‘½ä»¤å¸§
- * @param  hfdcan  é«‹ç”µæœº CAN å¥æŸ„
- * @param  m  ç›®æ ‡ç”µæœºå¯¹è±¡
- * @param  data  8 å­—èŠ‚ç³»ç»Ÿå‘½ä»¤
- * @return HAL å‘é€çŠ¶æ€
+ * @brief  ·¢ËÍÒ»Ì¨ DM µç»úµÄÏµÍ³ÃüÁîÖ¡
+ * @param  hfdcan  CAN ¾ä±ú
+ * @param  m  Ä¿±êµç»ú¶ÔÏó
+ * @param  data  8 ×Ö½ÚÏµÍ³ÃüÁîÊý¾Ý
+ * @return HAL ·¢ËÍ×´Ì¬
  */
 static HAL_StatusTypeDef DM_SendSysCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m,const uint8_t data[8])
 {
@@ -204,7 +204,7 @@ static HAL_StatusTypeDef DM_SendSysCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m,
     taskEXIT_CRITICAL();
     return st;
 }
-// å‘é€ç”µæœºä½¿èƒ½å¸§å¹¶è®°å½•å‘é€çŠ¶æ€
+// ·¢ËÍµç»úÊ¹ÄÜÖ¡£¬²¢¼ÇÂ¼·¢ËÍ×´Ì¬
 HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 {
     uint8_t data[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
@@ -212,21 +212,21 @@ HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
     m->last_tx_status = st;
     return st;
 }
-// å‘é€ç”µæœºå¤±èƒ½å¸§
+// ·¢ËÍµç»úÊ§ÄÜÖ¡
 void DM_Disable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m)
 {
     uint8_t data[8] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
     DM_SendSysCmd(hfdcan, m, data);
 }
 /**
- * @brief  é™åˆ¶å¹¶é‡åŒ– MIT ä½ç½®ã€é€Ÿåº¦ã€å¢žç›Šå’Œå‰é¦ˆåŠ›çŸ©
- * @param  m  ç›®æ ‡ç”µæœºå¯¹è±¡
- * @param  pos  ç›®æ ‡ä½ç½® [rad]
- * @param  vel  ç›®æ ‡é€Ÿåº¦ [rad/s]
- * @param  kp  ä½ç½®å¢žç›Š
- * @param  kd  é€Ÿåº¦å¢žç›Š
- * @param  t_ff  å‰é¦ˆåŠ›çŸ© [N*m]
- * @return æ— 
+ * @brief  ÏÞ·ù²¢Á¿»¯ MIT Î»ÖÃ¡¢ËÙ¶È¡¢ÔöÒæÓëÇ°À¡Á¦¾Ø
+ * @param  m  Ä¿±êµç»ú¶ÔÏó
+ * @param  pos  Ä¿±êÎ»ÖÃ [rad]
+ * @param  vel  Ä¿±êËÙ¶È [rad/s]
+ * @param  kp  Î»ÖÃÔöÒæ Kp
+ * @param  kd  ËÙ¶ÈÔöÒæ Kd
+ * @param  t_ff  Ç°À¡Á¦¾Ø [N*m]
+ * @return ÎÞ
  */
 void DM_MITCtrl(DM_Motor *m, float pos, float vel, float kp, float kd, float t_ff)
 {
@@ -243,7 +243,7 @@ void DM_MITCtrl(DM_Motor *m, float pos, float vel, float kp, float kd, float t_f
     m->cmd.kd = float_to_uint(kd, DM_KD_MIN, DM_KD_MAX, 12);
     m->cmd.t_ff = float_to_uint(t_ff, DM_TOR_MIN, DM_TOR_MAX, 12);
 }
-// å°† MIT æŽ§åˆ¶æŒ‡ä»¤ç½®ä¸ºé›¶ä½ç½®ã€é›¶é€Ÿåº¦å’Œé›¶åŠ›çŸ©
+// Í£×ª£ºÎ»ÖÃ¡¢ËÙ¶È¡¢Ç°À¡Á¦¾ØÖÃÁã£¬ÔöÒæÇåÁã
 void DM_CtrlStop(DM_Motor *m)
 {
     m->cmd.p_des = float_to_uint(0.0f, DM_POS_MIN, DM_POS_MAX, 16);

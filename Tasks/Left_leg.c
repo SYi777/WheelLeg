@@ -1,9 +1,11 @@
 /**
 *@file Left_leg.c
-*@brief å·¦è…¿æ§åˆ¶çŠ¶æ€å®ä¾‹
+*@brief ×óÍÈ¿ØÖÆ×´Ì¬ÊµÀı
 *@Author SYi777
 *@Email jyh1621839418@163.com
 *@Date
+*
+*¶¨Òå LeftLegCtrl_s ¿ØÖÆÊµÀıÊı×é LeftCtrl¡£
 **/
 #include "Left_leg.h"
 

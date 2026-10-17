@@ -1,0 +1,7 @@
+120: 		vmc->fk_s.tau_a = vmc->fk_s.tau_b = 0;
+146: 		fivebar_force(&vmc->fk_s.J, vmc->F_fk_x_N, vmc->F_fk_y_N, &vmc->fk_s.tau_a, &vmc->fk_s.tau_b);
+151: 		vmc->fk_s.tau_a = vmc->fk_s.tau_b = 0.0f;
+208:     vmc->tau_request_a_Nm = vmc->fk_s.tau_a / 1000.0f;
+209:     vmc->tau_request_b_Nm = vmc->fk_s.tau_b / 1000.0f;
+215:         vmc->fk_s.tau_a = vmc->fk_s.tau_b = 0.0f;
+259:                    &vmc->fk_s.tau_a, &vmc->fk_s.tau_b);

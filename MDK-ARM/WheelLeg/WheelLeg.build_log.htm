@@ -27,18 +27,16 @@ Project File Date:  10/13/2026
 <h2>Output:</h2>
 *** Using Compiler 'V5.06 update 7 (build 960)', folder: 'D:\Applications\Keil\ARM\ARMCC\Bin'
 Build target 'WheelLeg'
-compiling RobotState.c...
-..\Tasks\RobotState.c(5): warning:  #177-D: variable "RobotAuto"  was declared but never referenced
-  static uint8_t RobotAuto=0;     								//自动/手动瞄准标志，手动0自动1
-..\Tasks\RobotState.c(6): warning:  #550-D: variable "CtrlMode"  was set but never used
-  static uint8_t CtrlMode=0;     									//键盘/遥控操作标志，遥控0键盘1
-..\Tasks\RobotState.c(8): warning:  #177-D: variable "robotState"  was declared but never referenced
-  static enum RobotState_e robotState=RobotState_e_Powerless;  	//机器人初始状态
-..\Tasks\RobotState.c: 3 warnings, 0 errors
+compiling balance.c...
+..\Algorithm\balance.c(23): warning:  #177-D: function "limit"  was declared but never referenced
+  static float limit(float value, float bound)
+..\Algorithm\balance.c: 1 warning, 0 errors
+compiling VMC.c...
+compiling Leg_Tasks.c...
 linking...
-Program Size: Code=73640 RO-data=3680 RW-data=1340 ZI-data=46148  
+Program Size: Code=75012 RO-data=3676 RW-data=1348 ZI-data=46164  
 FromELF: creating hex file...
-"WheelLeg\WheelLeg.axf" - 0 Error(s), 3 Warning(s).
+"WheelLeg\WheelLeg.axf" - 0 Error(s), 1 Warning(s).
 
 <h2>Software Packages used:</h2>
 

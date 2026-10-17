@@ -1,19 +1,24 @@
 /**
-*@file 8009_Ctrl_Applications.c
-*@brief å¯¹é€ä¸ª8009çš„ç”µæœºè¿›è¡ŒåŠŸèƒ½ä¾‹åŒ–
+*@file 8009_CtrlApplications.c
+*@brief ¶ÔÖğ¸ö 8009 µç»ú½øĞĞ¹¦ÄÜÀı»¯
 *@Author SYi777
 *@Email jyh1621839418@163.com
 *@Date 2026-6-5
+*
+*¸÷º¯Êı°´¹Ì¶¨Ë÷Òı²Ù×÷ DM8009_Ctrl[], ĞÎ²Î hfdcan/g_motor µ±Ç°Î´Ê¹ÓÃ;
+*½ö¸üĞÂ MIT Ö¸Áî, ²»·¢ËÍ CAN¡£
 **/
 #include "8009_CtrlApplications.h"
 
 DM_Motor DM8009_Ctrl[4];
 
 /**
- * @brief  åˆå§‹åŒ–ä¸€å° DM8009 çš„æ§åˆ¶ä¸åé¦ˆçŠ¶æ€
- * @param  motor  ç”µæœºæ§åˆ¶å¯¹è±¡
- * @param  can_id  è¯¥ç”µæœºçš„ CAN ID
- * @return æ— 
+ * @brief  ³õÊ¼»¯Ò»Ì¨ DM8009 µÄ¿ØÖÆÓë·´À¡×´Ì¬
+ * @param  motor  µç»ú¿ØÖÆ¶ÔÏó
+ * @param  can_id  ¸Ãµç»úµÄ CAN ID
+ * @return ÎŞ
+ *
+ * ½öÇåÁãÈí¼ş×´Ì¬, ²»·¢ËÍ CAN ±¨ÎÄ¡£
  */
 void DM_8009Motor_Init(DM_Motor *motor, uint8_t can_id)
 {
@@ -25,13 +30,13 @@ void DM_8009Motor_Init(DM_Motor *motor, uint8_t can_id)
     motor->last_fb_tick    = 0;
     motor->last_cmd_tick   = 0;
     motor->last_tx_status  = HAL_OK;
-    // æ¸…é›¶æ§åˆ¶æŒ‡ä»¤
+    // ÇåÁã¿ØÖÆÖ¸Áî
     motor->cmd.p_des = 0;
     motor->cmd.v_des = 0;
     motor->cmd.kp    = 0;
     motor->cmd.kd    = 0;
     motor->cmd.t_ff  = 0;
-    // æ¸…é›¶åé¦ˆçŠ¶æ€
+    // ÇåÁã·´À¡×´Ì¬
     motor->fb.pos_raw   = 0;
     motor->fb.vel_raw   = 0;
     motor->fb.tor_raw   = 0;
@@ -46,42 +51,106 @@ void DM_8009Motor_Init(DM_Motor *motor, uint8_t can_id)
     motor->fb.fault     = 0;
     motor->fb.fault_code = DM_FAULT_NONE;
 }
-// è®¾ç½®å·¦è…¿ç¬¬ 1 å°ç”µæœºçš„ MIT å‰é¦ˆåŠ›çŸ©ï¼Œä¸å‘é€ CAN
+/**
+ * @brief  ÉèÖÃ×óÇ°¹Ø½Ú (¹Ø½Ú id=1) µÄ MIT Ç°À¡Á¦¾Ø
+ * @param  hfdcan  Î´Ê¹ÓÃ, Ô¤Áô CAN ¾ä±ú
+ * @param  g_motor  Î´Ê¹ÓÃ, Ô¤Áôµç»ú¶ÔÏó
+ * @param  t_ff  Ç°À¡Á¦¾Ø [N*m]
+ * @return ÎŞ
+ *
+ * µç»úÎ»ÓÚ×óºó·½, ¹Ì¶¨²Ù×÷ DM8009_Ctrl[0]; ½ö¸üĞÂÖ¸Áî, ²»·¢ËÍ CAN¡£
+ */
 void Set_LeftOneTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff)
 {
 	DM_MITCtrl(&DM8009_Ctrl[0],0.0f,0.0f,0.0f,0.0f,t_ff);
 }
-// è®¾ç½®å·¦è…¿ç¬¬ 2 å°ç”µæœºçš„ MIT å‰é¦ˆåŠ›çŸ©ï¼Œä¸å‘é€ CAN
+/**
+ * @brief  ÉèÖÃ×óºó¹Ø½Ú (¹Ø½Ú id=2) µÄ MIT Ç°À¡Á¦¾Ø
+ * @param  hfdcan  Î´Ê¹ÓÃ, Ô¤Áô CAN ¾ä±ú
+ * @param  g_motor  Î´Ê¹ÓÃ, Ô¤Áôµç»ú¶ÔÏó
+ * @param  t_ff  Ç°À¡Á¦¾Ø [N*m]
+ * @return ÎŞ
+ *
+ * µç»úÎ»ÓÚ×óÇ°·½, ¹Ì¶¨²Ù×÷ DM8009_Ctrl[1]; ½ö¸üĞÂÖ¸Áî, ²»·¢ËÍ CAN¡£
+ */
 void Set_LeftTwoTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff)
 {
 	DM_MITCtrl(&DM8009_Ctrl[1],0.0f,0.0f,0.0f,0.0f,t_ff);
 }
-// è®¾ç½®å³è…¿ç¬¬ 1 å°ç”µæœºçš„ MIT å‰é¦ˆåŠ›çŸ©ï¼Œä¸å‘é€ CAN
+/**
+ * @brief  ÉèÖÃÓÒÇ°¹Ø½Ú (¹Ø½Ú id=3) µÄ MIT Ç°À¡Á¦¾Ø
+ * @param  hfdcan  Î´Ê¹ÓÃ, Ô¤Áô CAN ¾ä±ú
+ * @param  g_motor  Î´Ê¹ÓÃ, Ô¤Áôµç»ú¶ÔÏó
+ * @param  t_ff  Ç°À¡Á¦¾Ø [N*m]
+ * @return ÎŞ
+ *
+ * µç»úÎ»ÓÚÓÒÇ°·½, ¹Ì¶¨²Ù×÷ DM8009_Ctrl[2]; ½ö¸üĞÂÖ¸Áî, ²»·¢ËÍ CAN¡£
+ */
 void Set_RightOneTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff)
 {
 	DM_MITCtrl(&DM8009_Ctrl[2],0.0f,0.0f,0.0f,0.0f,t_ff);
 }
-// è®¾ç½®å³è…¿ç¬¬ 2 å°ç”µæœºçš„ MIT å‰é¦ˆåŠ›çŸ©ï¼Œä¸å‘é€ CAN
+/**
+ * @brief  ÉèÖÃÓÒºó¹Ø½Ú (¹Ø½Ú id=4) µÄ MIT Ç°À¡Á¦¾Ø
+ * @param  hfdcan  Î´Ê¹ÓÃ, Ô¤Áô CAN ¾ä±ú
+ * @param  g_motor  Î´Ê¹ÓÃ, Ô¤Áôµç»ú¶ÔÏó
+ * @param  t_ff  Ç°À¡Á¦¾Ø [N*m]
+ * @return ÎŞ
+ *
+ * µç»úÎ»ÓÚÓÒºó·½, ¹Ì¶¨²Ù×÷ DM8009_Ctrl[3]; ½ö¸üĞÂÖ¸Áî, ²»·¢ËÍ CAN¡£
+ */
 void Set_RightTwoTorqueMIT(FDCAN_HandleTypeDef *hfdcan,DM_Motor *g_motor,float t_ff)
 {
 	DM_MITCtrl(&DM8009_Ctrl[3],0.0f,0.0f,0.0f,0.0f,t_ff);
 }
-// è®¾ç½®å·¦è…¿ç¬¬ 1 å°ç”µæœºçš„ MIT ç›®æ ‡è§’åº¦ï¼Œä¸å‘é€ CAN
+/**
+ * @brief  ÉèÖÃ×óÇ°¹Ø½Ú (¹Ø½Ú id=1) µÄ MIT Ä¿±ê½Ç¶È
+ * @param  hfdcan  Î´Ê¹ÓÃ, Ô¤Áô CAN ¾ä±ú
+ * @param  g_motor  Î´Ê¹ÓÃ, Ô¤Áôµç»ú¶ÔÏó
+ * @param  pos  Ä¿±ê½Ç¶È [rad]
+ * @return ÎŞ
+ *
+ * µç»úÎ»ÓÚ×óºó·½, ¹Ì¶¨²Ù×÷ DM8009_Ctrl[0]; Kp=10, Kd=2, ²»·¢ËÍ CAN¡£
+ */
 void Set_LeftOnePositionMIT(FDCAN_HandleTypeDef *hfdcan, DM_Motor *g_motor, float pos)
 {
     DM_MITCtrl(&DM8009_Ctrl[0], pos, 0.0f, 10.0f, 2.0f, 0.0f);
 }
-// è®¾ç½®å·¦è…¿ç¬¬ 2 å°ç”µæœºçš„ MIT ç›®æ ‡è§’åº¦ï¼Œä¸å‘é€ CAN
+/**
+ * @brief  ÉèÖÃ×óºó¹Ø½Ú (¹Ø½Ú id=2) µÄ MIT Ä¿±ê½Ç¶È
+ * @param  hfdcan  Î´Ê¹ÓÃ, Ô¤Áô CAN ¾ä±ú
+ * @param  g_motor  Î´Ê¹ÓÃ, Ô¤Áôµç»ú¶ÔÏó
+ * @param  pos  Ä¿±ê½Ç¶È [rad]
+ * @return ÎŞ
+ *
+ * µç»úÎ»ÓÚ×óÇ°·½, ¹Ì¶¨²Ù×÷ DM8009_Ctrl[1]; Kp=10, Kd=2, ²»·¢ËÍ CAN¡£
+ */
 void Set_LeftTwoPositionMIT(FDCAN_HandleTypeDef *hfdcan, DM_Motor *g_motor, float pos)
 {
     DM_MITCtrl(&DM8009_Ctrl[1], pos, 0.0f, 10.0f, 2.0f, 0.0f);
 }
-// è®¾ç½®å³è…¿ç¬¬ 1 å°ç”µæœºçš„ MIT ç›®æ ‡è§’åº¦ï¼Œä¸å‘é€ CAN
+/**
+ * @brief  ÉèÖÃÓÒÇ°¹Ø½Ú (¹Ø½Ú id=3) µÄ MIT Ä¿±ê½Ç¶È
+ * @param  hfdcan  Î´Ê¹ÓÃ, Ô¤Áô CAN ¾ä±ú
+ * @param  g_motor  Î´Ê¹ÓÃ, Ô¤Áôµç»ú¶ÔÏó
+ * @param  pos  Ä¿±ê½Ç¶È [rad]
+ * @return ÎŞ
+ *
+ * µç»úÎ»ÓÚÓÒÇ°·½, ¹Ì¶¨²Ù×÷ DM8009_Ctrl[2]; Kp=10, Kd=2, ²»·¢ËÍ CAN¡£
+ */
 void Set_RightOnePositionMIT(FDCAN_HandleTypeDef *hfdcan, DM_Motor *g_motor, float pos)
 {
     DM_MITCtrl(&DM8009_Ctrl[2], pos, 0.0f, 10.0f, 2.0f, 0.0f);
 }
-// è®¾ç½®å³è…¿ç¬¬ 2 å°ç”µæœºçš„ MIT ç›®æ ‡è§’åº¦ï¼Œä¸å‘é€ CAN
+/**
+ * @brief  ÉèÖÃÓÒºó¹Ø½Ú (¹Ø½Ú id=4) µÄ MIT Ä¿±ê½Ç¶È
+ * @param  hfdcan  Î´Ê¹ÓÃ, Ô¤Áô CAN ¾ä±ú
+ * @param  g_motor  Î´Ê¹ÓÃ, Ô¤Áôµç»ú¶ÔÏó
+ * @param  pos  Ä¿±ê½Ç¶È [rad]
+ * @return ÎŞ
+ *
+ * µç»úÎ»ÓÚÓÒºó·½, ¹Ì¶¨²Ù×÷ DM8009_Ctrl[3]; Kp=10, Kd=2, ²»·¢ËÍ CAN¡£
+ */
 void Set_RightTwoPositionMIT(FDCAN_HandleTypeDef *hfdcan, DM_Motor *g_motor, float pos)
 {
     DM_MITCtrl(&DM8009_Ctrl[3], pos, 0.0f, 10.0f, 2.0f, 0.0f);

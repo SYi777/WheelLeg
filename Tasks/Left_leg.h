@@ -1,9 +1,12 @@
 /**
 *@file Left_leg.h
-*@brief å·¦è…¿æ§åˆ¶ç»“æ„ä½“ä¸ PID å‚æ•°
+*@brief ×óÍÈ¿ØÖÆ½á¹¹ÌåÓë PID ²ÎÊı
 *@Author SYi777
 *@Email jyh1621839418@163.com
 *@Date
+*
+*¶¨Òåµ¥ÍÈ½Ç¶È±Õ»·ËùĞèµÄ½á¹¹ÌåÓë PID ³£Á¿¡£
+*×¢Òâ: Leg_Tasks.h ÖĞÁíÓĞÍ¬Ãû½á¹¹Ìå¶¨Òå, Á½¸öÍ·ÎÄ¼ş²»¿ÉÍ¬Ê±°üº¬¡£
 **/
 #ifndef __LEFT_LEG_H
 #define __LEFT_LEG_H
@@ -11,26 +14,26 @@
 #include "pid.h"
 
 #define M_PI 3.1415926
-//pid å¸¸é‡å®šä¹‰
+// PID ²ÎÊı
 #define PID_MAX_OUT 30.0f
 #define PID_MAX_IOUT 5.0f
 #define PID_P 2.0f
 #define PID_I 0.0f
 #define PID_D 9.0f
-//å·¦è…¿ç”µæœºæ§åˆ¶ç»“æ„ä½“å®šä¹‰ï¼ŒåŒ…å«å†…å®¹nopowerflagï¼Œtffoutï¼Œå½“å‰è§’åº¦ï¼Œç›®æ ‡è§’åº¦ï¼Œpidæ§åˆ¶ç»“æ„ä½“
+// ×óÍÈ¿ØÖÆ½á¹¹Ìå: ½Ç¶È·´À¡¡¢Ä¿±ê½Ç¶È¡¢PID ¿ØÖÆÆ÷ÓëÊä³ö
 typedef struct
 {
-	//æ¥è‡ªä¼ æ„Ÿå™¨çš„å€¼ï¼Œç”¨äºåˆå§‹åŒ–
+	// ÊäÈë: ´«¸ĞÆ÷½Ç¶ÈÖ¸Õë, ÓÃÓÚ³õÊ¼»¯
 	const fp32 *AnglePoint;
 	
-	//è§’åº¦
+	// ×´Ì¬: µ±Ç°¾ø¶Ô½Ç¶ÈÓëÄ¿±ê¾ø¶Ô½Ç¶È
 	fp32 Now_AbsoluteAngle;
 	fp32 Wanted_AbsoluteAngle;
 	
-	//PID
+	// PID ¿ØÖÆÆ÷
 	pid_type_def angle_pid;
 	
-	//control
+	// Êä³ö: Á¦¾ØÖ¸ÁîÓëÎŞÁ¦±êÖ¾
 	int16_t Torque_out;
 	uint8_t noPowerflag;
 }LeftLegCtrl_s;

@@ -1,6 +1,6 @@
 /**
 *@file struct_typedef.h
-*@brief 椤圭洰甯哥敤鍩烘湰绫诲瀷鍒悕
+*@brief 项目常用基本类型别名
 *@Author SYi777
 *@Email jyh1621839418@163.com
 *@Date
@@ -14,7 +14,7 @@ typedef signed short int int16_t;
 typedef signed int int32_t;
 typedef signed long long int64_t;
 
-/* exact-width unsigned integer types */
+// 精确宽度无符号整数类型
 typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;

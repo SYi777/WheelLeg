@@ -1,16 +1,16 @@
 /**
 *@file DM_motor.h
-*@brief è¾¾å¦™DM-J8009P-2ECç”µæœºé©±åŠ¨
+*@brief ´ïÃî DM-J8009P-2EC µç»úÇı¶¯
 *@Author SYi777
 *@Email jyh1621839418@163.com
 *@Date 2026-6-3
 *
-*é€šä¿¡åè®®ï¼šæ ‡å‡†CANï¼Œ1Mbps
-*æ§åˆ¶å¸§ ID = ç”µæœº CAN ID
-*åé¦ˆå¸§ ID = MASTER ID(0)
-*ï¼ï¼ï¼ï¼é€†æ—¶é’ˆä¸ºæ­£ï¼ï¼ï¼ï¼
+*Í¨ĞÅĞ­Òé£º±ê×¼ CAN£¬1 Mbps
+*¿ØÖÆÖ¡ ID = µç»ú CAN ID
+*·´À¡Ö¡ ID = MASTER ID(0)
+*£¡£¡£¡£¡ÄæÊ±ÕëÎªÕı£¡£¡£¡£¡
 *
-*MIT æ§åˆ¶å¸§æ ¼å¼ï¼š
+*MIT ¿ØÖÆÖ¡¸ñÊ½£º
 * D[0] : p_des(high 8)
 * D[1] : p_des(low  8)
 * D[2] : v_des(high 8)
@@ -20,14 +20,14 @@
 * D[6] : Kd(low  4) + t_ff(high 4)
 * D[7] : t_ff(low  8)
 *
-*åé¦ˆå¸§æ ¼å¼ï¼š
+*·´À¡Ö¡¸ñÊ½£º
 *
-* D[0] : ERR(normal=0)+ID(å4ä½)
+* D[0] : ERR(normal=0)+ID(ºó4Î»)
 * D[1] : POS(high 8)
 * D[2] : POS(low  8)
 * D[3] : VEL(high 8)
 * D[4] : VEL(low  4) + T(high 4)
-* D[5] : T(æ‰­çŸ©)
+* D[5] : T(Å¤¾Ø)
 * D[6] : T_MOS
 * D[7] : T_Rotor
 *
@@ -38,8 +38,8 @@
 #include <string.h>
 
 #define DM_ENCODER_BITS 14
-#define DM_ENCODER_RESOLUTION (1 << DM_ENCODER_BITS) //16384
-// MIT params
+#define DM_ENCODER_RESOLUTION (1 << DM_ENCODER_BITS) // ±àÂëÆ÷·Ö±æÂÊ 16384
+// MIT ¿ØÖÆÁ¿·¶Î§
 #define DM_POS_MIN (-3.1415926f)
 #define DM_POS_MAX (3.1415926f)
 #define DM_VEL_MIN (-45.0f)
@@ -50,24 +50,24 @@
 #define DM_KP_MAX	500.0f
 #define DM_KD_MIN	0.0f
 #define DM_KD_MAX	5.0f
-// timeout
+// Í¨ĞÅ³¬Ê±
 #define DM_COMM_TIMEOUT_MS 200
-// error code
+// ¹ÊÕÏÂë
 typedef enum
 {
-    DM_FAULT_NONE        = 0x0,   // æ— æ•…éšœ
-    DM_FAULT_OVERVOLT    = 0x8,   // è¶…å‹
-    DM_FAULT_UNDERVOLT   = 0x9,   // æ¬ å‹
-    DM_FAULT_OVERCURR    = 0xA,   // è¿‡ç”µæµ
-    DM_FAULT_MOS_OVERT   = 0xB,   // MOS è¿‡æ¸©
-    DM_FAULT_COIL_OVERT  = 0xC,   // çº¿åœˆè¿‡æ¸©
-    DM_FAULT_COMM_LOSS   = 0xD,   // é€šè®¯ä¸¢å¤±
-    DM_FAULT_OVERLOAD    = 0xE,   // è¿‡è½½
+    DM_FAULT_NONE        = 0x0,   // ÎŞ¹ÊÕÏ
+    DM_FAULT_OVERVOLT    = 0x8,   // ³¬Ñ¹
+    DM_FAULT_UNDERVOLT   = 0x9,   // Ç·Ñ¹
+    DM_FAULT_OVERCURR    = 0xA,   // ¹ıµçÁ÷
+    DM_FAULT_MOS_OVERT   = 0xB,   // MOS ¹ıÎÂ
+    DM_FAULT_COIL_OVERT  = 0xC,   // ÏßÈ¦¹ıÎÂ
+    DM_FAULT_COMM_LOSS   = 0xD,   // Í¨Ñ¶¶ªÊ§
+    DM_FAULT_OVERLOAD    = 0xE,   // ¹ıÔØ
 }DM_FaultCode;
-// ç”µæœºçŠ¶æ€
+// µç»ú×´Ì¬
 typedef struct
 {
-	// raw
+	// Ô­Ê¼Öµ
 	uint16_t pos_raw;
 	uint16_t vel_raw;
 	uint16_t tor_raw;
@@ -75,51 +75,51 @@ typedef struct
 	uint8_t motor_id;
 	uint8_t t_mos;
 	uint8_t t_rotor;
-	// true
-	float position;		//rad
-	float velocity;		//rad
-	float torque;		//Nm
-	float processed_pos;//rad in 2piï¼Œå¤„ç†åçš„0åˆ°2PIçš„ç»å¯¹è§’åº¦ï¼Œæ–¹ä¾¿åšä½ç½®ç¯
-	// state flag
-	uint8_t enabled;	//err = 0
-	uint8_t fault;		//err > 1
+	// ÎïÀíÁ¿
+	float position;		// Î»ÖÃ [rad]
+	float velocity;		// ËÙ¶È [rad/s]
+	float torque;		// Á¦¾Ø [N*m]
+	float processed_pos;// ´¦Àíºó¾ø¶Ô½Ç¶È [rad]£¬·¶Î§ 0~2¦Ğ£¬±ãÓÚÎ»ÖÃ»·
+	// ×´Ì¬±êÖ¾
+	uint8_t enabled;	// Ê¹ÄÜ±êÖ¾£¬err == 1
+	uint8_t fault;		// ¹ÊÕÏ±êÖ¾£¬err > 1
 	uint8_t fault_code;
 }DM_state;
-// å‘½ä»¤
+// ¿ØÖÆÃüÁî
 typedef struct {
-    // raw
-    uint16_t  p_des;         // ç›®æ ‡ä½ç½®
-    uint16_t  v_des;         // ç›®æ ‡é€Ÿåº¦
-    uint16_t kp;            // ä½ç½®æ¯”ä¾‹
-    uint16_t kd;            // é€Ÿåº¦é˜»å°¼
-    uint16_t  t_ff;          // å‰é¦ˆæ‰­çŸ©
+    // Á¿»¯Öµ
+    uint16_t  p_des;         // Ä¿±êÎ»ÖÃÁ¿»¯Öµ
+    uint16_t  v_des;         // Ä¿±êËÙ¶ÈÁ¿»¯Öµ
+    uint16_t kp;            // Î»ÖÃÔöÒæ Kp Á¿»¯Öµ
+    uint16_t kd;            // ËÙ¶ÈÔöÒæ Kd Á¿»¯Öµ
+    uint16_t  t_ff;          // Ç°À¡Á¦¾ØÁ¿»¯Öµ
 } DM_Command;
 typedef struct {
-    uint8_t      can_id;           // ç”µæœº CAN ID
-    DM_Command   cmd;              // å¾…å‘é€å‘½ä»¤
-    DM_state	 fb;               // æœ€æ–°åé¦ˆ
-    uint32_t     last_fb_tick;     // ä¸Šæ¬¡æ”¶åˆ°åé¦ˆçš„æ—¶é—´æˆ³
-    uint32_t     last_cmd_tick;    // ä¸Šæ¬¡å‘é€å‘½ä»¤çš„æ—¶é—´æˆ³
-    uint8_t      online;           // åœ¨çº¿æ ‡å¿—
-    uint32_t     rx_cnt;           // æ”¶åŒ…è®¡æ•°
-    uint32_t     tx_cnt;           // å‘åŒ…è®¡æ•°
-    HAL_StatusTypeDef last_tx_status; // ä¸Šæ¬¡å‘é€ç»“æœ
+    uint8_t      can_id;           // µç»ú CAN ID
+    DM_Command   cmd;              // ´ı·¢ËÍÃüÁî
+    DM_state	 fb;               // ×îĞÂ·´À¡
+    uint32_t     last_fb_tick;     // ÉÏ´ÎÊÕµ½·´À¡µÄÊ±¼ä´Á [ms]
+    uint32_t     last_cmd_tick;    // ÉÏ´Î·¢ËÍÃüÁîµÄÊ±¼ä´Á [ms]
+    uint8_t      online;           // ÔÚÏß±êÖ¾
+    uint32_t     rx_cnt;           // ÊÕ°ü¼ÆÊı
+    uint32_t     tx_cnt;           // ·¢°ü¼ÆÊı
+    HAL_StatusTypeDef last_tx_status; // ÉÏ´Î·¢ËÍ½á¹û
 } DM_Motor;
 
 void DM_PackMITCmd(const DM_Command *cmd, uint8_t data[8]);
 void DM_UnpackFb(const uint8_t data[8], DM_state *fb);
 HAL_StatusTypeDef DM_SendCmd(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
 
-//ç”µæœºä½¿èƒ½
+// µç»úÊ¹ÄÜ
 HAL_StatusTypeDef DM_Enable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
-//ç”µæœºå…³é—­
+// µç»ú¹Ø±Õ
 void DM_Disable(FDCAN_HandleTypeDef *hfdcan, DM_Motor *m);
-//MIT
+// MIT ¿ØÖÆ
 void DM_MITCtrl(DM_Motor *m, float pos, float vel, float kp, float kd, float t_ff);
-//åœè½¬
+// Í£×ª
 void DM_CtrlStop(DM_Motor *m);
 
-//å·¥å…·å‡½æ•°ï¼Œæ•°æ®è½¬æ¢
+// ¹¤¾ßº¯Êı£º¸¡µãÓëÎŞ·ûºÅÕûÊı»¥×ª
 static inline int float_to_uint(float x_float, float x_min, float x_max, int bits)
 {
     float span = x_max - x_min;
